@@ -1,45 +1,8 @@
 import { useState } from "react";
 import "./App.css";
+import type { Lure, Gear, Kit, Catch, Trip, Data } from "./types";
+import { parseBackup, MAX_BACKUP_BYTES } from "./backup";
 
-type Lure = {
-  id: string;
-  maker: string;
-  model: string;
-  type: string;
-  weight: number;
-  color: string;
-  code: string;
-  photo: string;
-  demo?: boolean;
-};
-type Gear = {
-  id: string;
-  type: string;
-  name: string;
-  specs: string;
-  demo?: boolean;
-};
-type Kit = {
-  id: string;
-  name: string;
-  rod: string;
-  reel: string;
-  line: string;
-  leader: string;
-  demo?: boolean;
-};
-type Catch = { id: string; round: number; lure: string; count: number };
-type Trip = {
-  id: string;
-  date: string;
-  venue: string;
-  weather: string;
-  type: string;
-  rounds: number;
-  catches: Catch[];
-  demo?: boolean;
-};
-type Data = { lures: Lure[]; gear: Gear[]; kits: Kit[]; trips: Trip[] };
 const key = "iron-hook-v1";
 const uid = () => crypto.randomUUID();
 const demo: Data = {
@@ -154,13 +117,7 @@ const demo: Data = {
 function load(): Data {
   const raw = localStorage.getItem(key);
   if (!raw) return demo;
-  const d = JSON.parse(raw);
-  if (
-    !d ||
-    !["lures", "gear", "kits", "trips"].every((k) => Array.isArray(d[k]))
-  )
-    throw Error("Неверный формат");
-  return d;
+  return parseBackup(raw);
 }
 const pages = [
   "Главная панель",
@@ -184,20 +141,26 @@ function App() {
   });
   const [data, setData] = useState<Data>(initial.data);
   const [error, setError] = useState(initial.error);
+  const [storageBroken, setStorageBroken] = useState(Boolean(initial.error));
+  const [restore, setRestore] = useState<Data | null>(null);
+  const [restoreError, setRestoreError] = useState("");
+  const [restoreNotice, setRestoreNotice] = useState("");
+  const [reading, setReading] = useState(false);
   const [page, setPage] = useState(0);
   const [modal, setModal] = useState<"lure" | "gear" | "kit" | "trip" | null>(
     null,
   );
   const [edit, setEdit] = useState("");
   const [search, setSearch] = useState("");
-  function commit(next: Data) {
-    if (initial.error && error) {
+  function commit(next: Data, recovering = false) {
+    if (storageBroken && !recovering) {
       alert(error);
       return false;
     }
     try {
       localStorage.setItem(key, JSON.stringify(next));
       setData(next);
+      setStorageBroken(false);
       setError("");
       return true;
     } catch {
@@ -248,7 +211,7 @@ function App() {
   function backup() {
     const blob = new Blob(
       [
-        initial.error
+        storageBroken
           ? localStorage.getItem(key) || ""
           : JSON.stringify(data, null, 2),
       ],
@@ -259,6 +222,24 @@ function App() {
     a.download = "iron-hook-backup.json";
     a.click();
     URL.revokeObjectURL(a.href);
+  }
+  async function readBackup(file: File) {
+    setRestoreError("");
+    setRestoreNotice("");
+    setRestore(null);
+    setReading(true);
+    try {
+      if (file.size > MAX_BACKUP_BYTES)
+        throw new Error("Файл слишком большой. Максимум — 10 МБ.");
+      const restored = parseBackup(await file.text());
+      setRestore(restored);
+    } catch (e) {
+      setRestoreError(
+        e instanceof Error ? e.message : "Не удалось прочитать файл.",
+      );
+    } finally {
+      setReading(false);
+    }
   }
   const badge = (test?: boolean) =>
     test ? <span className="badge">Тестовые данные</span> : null;
@@ -380,6 +361,7 @@ function App() {
                       }),
                     );
                     setData({ lures: [], gear: [], kits: [], trips: [] });
+                    setStorageBroken(false);
                     setError("");
                   } catch {
                     setError("Не удалось очистить хранилище.");
@@ -714,11 +696,84 @@ function App() {
             </section>
           </>
         )}
+        {restoreError && (
+          <div className="notice error" role="alert">
+            {restoreError} Текущие записи не изменены.
+          </div>
+        )}
+        {restoreNotice && (
+          <div className="notice" role="status">
+            {restoreNotice}
+          </div>
+        )}
         <footer>
           <button onClick={backup}>↓ Резервная копия</button>
+          <label className="restore-button">
+            {reading ? "Проверка файла…" : "↑ Восстановить из файла"}
+            <input
+              type="file"
+              accept=".json,application/json"
+              disabled={reading}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (file) void readBackup(file);
+              }}
+            />
+          </label>
           <span>IRON HOOK · Сохраняйте опыт. Совершенствуйте результат.</span>
         </footer>
       </main>
+      {restore && (
+        <div
+          className="overlay"
+          onKeyDown={(e) => {
+            if (e.key === "Escape") setRestore(null);
+          }}
+        >
+          <section
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="restore-title"
+          >
+            <h2 id="restore-title">Восстановление резервной копии</h2>
+            <p>
+              Файл проверен. В копии: {restore.trips.length} рыбалок,{" "}
+              {restore.lures.length} приманок, {restore.gear.length} снастей,{" "}
+              {restore.kits.length} комплектов.
+            </p>
+            <div className="notice">
+              Все текущие записи будут заменены данными из файла. Объединение
+              записей не выполняется. Сначала скачайте текущую копию, если
+              хотите сохранить её.
+            </div>
+            <button onClick={backup}>Скачать текущую копию</button>
+            {error && <p role="alert">{error}</p>}
+            <div className="modal-bottom">
+              <button autoFocus onClick={() => setRestore(null)}>
+                Отмена
+              </button>
+              <button
+                className="primary"
+                onClick={() => {
+                  if (commit(restore, true)) {
+                    setRestore(null);
+                    setModal(null);
+                    setPage(0);
+                    setSearch("");
+                    setRestoreNotice(
+                      "Резервная копия восстановлена. Данные сохранены в этом браузере.",
+                    );
+                  }
+                }}
+              >
+                Заменить данные и восстановить
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
       {modal && (
         <Editor
           key={`${modal}-${edit}`}

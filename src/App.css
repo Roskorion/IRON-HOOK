@@ -764,3 +764,35 @@ footer span {
     text-align: right;
   }
 }
+footer {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+.restore-button {
+  display: inline-block;
+  position: relative;
+  border: 1px solid #34363e;
+  background: #22242b;
+  color: #eeeff3;
+  border-radius: 7px;
+  padding: 10px 14px;
+  font-size: 13px;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+.restore-button:hover {
+  background: #34363e;
+}
+.restore-button input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.restore-button:focus-within {
+  outline: 2px solid #ff4b56;
+  outline-offset: 3px;
+}

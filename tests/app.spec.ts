@@ -85,3 +85,123 @@ test("снасти и комплекты редактируются и сохр�
     page.getByRole("heading", { name: "Турнирный комплект" }),
   ).toBeVisible();
 });
+
+test("резервная копия: экспорт, отмена и восстановление после очистки", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const original = await page.evaluate(() => {
+    // Сохраняем исходную тестовую базу через действие приложения ниже.
+    return localStorage.getItem("iron-hook-v1");
+  });
+  expect(original).toBeNull();
+  const downloadEvent = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "↓ Резервная копия", exact: true })
+    .click();
+  const download = await downloadEvent;
+  const path = await download.path();
+  expect(path).toBeTruthy();
+  page.on("dialog", (d) => d.accept());
+  await page.getByRole("button", { name: "Очистить базу" }).click();
+  await page.locator("footer input[type=file]").setInputFiles(path!);
+  const dialog = page.getByRole("dialog", {
+    name: "Восстановление резервной копии",
+  });
+  await expect(dialog).toContainText(
+    "2 рыбалок, 3 приманок, 4 снастей, 1 комплектов",
+  );
+  await dialog.getByRole("button", { name: "Отмена", exact: true }).click();
+  await expect(page.locator(".stat").first().locator("strong")).toHaveText("0");
+  await page.locator("footer input[type=file]").setInputFiles(path!);
+  await dialog
+    .getByRole("button", { name: "Заменить данные и восстановить" })
+    .click();
+  await expect(page.getByRole("status")).toContainText(
+    "Резервная копия восстановлена",
+  );
+  await page.reload();
+  await expect(page.locator(".stat").first().locator("strong")).toHaveText("2");
+  await expect(page.locator(".stat").nth(1).locator("strong")).toHaveText("20");
+  await page
+    .getByRole("button", { name: "Снасти и комплекты", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Лёгкий старт" }),
+  ).toBeVisible();
+});
+
+test("ошибочные файлы не меняют дневник; восстановление повреждённого хранилища", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const downloadEvent = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "↓ Резервная копия", exact: true })
+    .click();
+  const path = await (await downloadEvent).path();
+  // Получаем действительную копию, чтобы проверить отдельные виды повреждения.
+  const { readFile } = await import("node:fs/promises");
+  const raw = await readFile(path!, "utf8");
+  const original = JSON.parse(raw);
+  for (const payload of [
+    "{broken",
+    JSON.stringify({ lures: [], gear: [], kits: [], trips: [{}] }),
+    JSON.stringify({
+      ...original,
+      lures: [...original.lures, original.lures[0]],
+    }),
+    JSON.stringify({
+      ...original,
+      trips: [
+        {
+          ...original.trips[0],
+          catches: [{ id: "bad", round: 9, lure: "missing", count: -1 }],
+        },
+      ],
+    }),
+  ]) {
+    await page
+      .locator("footer input[type=file]")
+      .setInputFiles({
+        name: "backup.json",
+        mimeType: "application/json",
+        buffer: Buffer.from(payload),
+      });
+    await expect(page.getByRole("alert")).toContainText(
+      "Текущие записи не изменены",
+    );
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    await expect(page.locator(".stat").first().locator("strong")).toHaveText(
+      "2",
+    );
+    expect(
+      await page.evaluate(() => localStorage.getItem("iron-hook-v1")),
+    ).toBeNull();
+  }
+  await page
+    .locator("footer input[type=file]")
+    .setInputFiles({
+      name: "large.json",
+      mimeType: "application/json",
+      buffer: Buffer.alloc(10 * 1024 * 1024 + 1, 32),
+    });
+  await expect(page.getByRole("alert")).toContainText("Файл слишком большой");
+  await page.evaluate(() => localStorage.setItem("iron-hook-v1", "{broken"));
+  await page.reload();
+  await page.locator("footer input[type=file]").setInputFiles(path!);
+  await page
+    .getByRole("button", { name: "Заменить данные и восстановить" })
+    .click();
+  await page.reload();
+  await expect(
+    page.getByText("Не удалось прочитать сохранённые данные.", {
+      exact: false,
+    }),
+  ).toHaveCount(0);
+  expect(
+    JSON.parse(
+      (await page.evaluate(() => localStorage.getItem("iron-hook-v1")))!,
+    ),
+  ).toEqual(original);
+});
