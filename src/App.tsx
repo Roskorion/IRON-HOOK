@@ -2,7 +2,7 @@ import { useState } from "react";
 import "./App.css";
 import LureLibrary from "./LureLibrary";
 import LurePhoto from "./LurePhoto";
-import { LURE_TYPES, CATEGORY_LABELS } from "./lures";
+import { LURE_TYPES, CATEGORY_LABELS, matchesLure } from "./lures";
 import type { Lure, Gear, Kit, Catch, Trip, Data } from "./types";
 import { parseBackup, MAX_BACKUP_BYTES } from "./backup";
 
@@ -158,11 +158,7 @@ function App() {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [myLureType, setMyLureType] = useState("");
   const visibleLures = data.lures.filter(
-    (l) =>
-      (!myLureType || l.type === myLureType) &&
-      `${l.maker} ${l.model} ${l.color} ${l.code}`
-        .toLowerCase()
-        .includes(search.toLowerCase()),
+    (l) => (!myLureType || l.type === myLureType) && matchesLure(l, search),
   );
   const [lurePreset, setLurePreset] = useState<Lure | undefined>();
   function commit(next: Data, recovering = false) {
@@ -528,6 +524,14 @@ function App() {
             {libraryOpen ? (
               <LureLibrary
                 owned={data.lures}
+                onUpdatePhoto={(id, photo) =>
+                  commit({
+                    ...data,
+                    lures: data.lures.map((l) =>
+                      l.id === id && !l.photo ? { ...l, photo } : l,
+                    ),
+                  })
+                }
                 onChoose={(l) => {
                   open("lure");
                   setLurePreset({ ...l, id: "", demo: false });

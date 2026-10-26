@@ -10,13 +10,14 @@ import pathlib
 import time
 import urllib.request
 from bs4 import BeautifulSoup
+from shop_parsers import onlyspin_photo
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 BASE = 'https://onlyspin.ru'
 TIMEZONE = datetime.timezone(datetime.timedelta(hours=3))
 CHECKED = datetime.datetime.now(TIMEZONE).date().isoformat()
-PAGES = ['/catalog/primanki/', '/catalog/kolebalki/', '/catalog/kolebalki/?PAGEN_1=2',
-         '/catalog/voblery/', '/catalog/voblery/?PAGEN_1=2', '/catalog/tsikady/']
+# All five pages of the supplied 1089 brand catalogue, plus retained cards.
+PAGES = ['/catalog/1089/'] + [f'/catalog/1089/?PAGEN_1={n}' for n in range(2,6)]
 CACHE = pathlib.Path('/tmp/iron-onlyspin-cache')
 CACHE.mkdir(exist_ok=True)
 
@@ -30,7 +31,8 @@ def fetch(path):
     cache.write_text(html)
     return BeautifulSoup(html, 'html.parser')
 
-links = {}
+existing=json.loads((ROOT/'public/lure-library.json').read_text())
+links = {e['url'].removeprefix(BASE):e['lure']['model'] for e in existing if e['source']=='Onlyspin'}
 for path in PAGES:
     page = fetch(path)
     for a in page.find_all('a', href=True):
@@ -57,6 +59,9 @@ def collect(pair):
         weight = float(raw_weight.replace(',','.')) if raw_weight else None
         lure_type = next((t for prefix,t in [('Блесна ','Блесна'),('Воблер ','Воблер'),('Цикада ','Цикада')] if heading.startswith(prefix)), None)
         raw_type = props.get('Тип приманки','').lower()
+        if raw_type in ['крэнк','кренк','crank']:lure_type='Кренк'
+        elif raw_type in ['виб','vib']:lure_type='Виб'
+        elif raw_type in ['раттлин','ратлин','rattlin']:lure_type='Раттлин'
         if not lure_type or any(word in raw_type for word in ['силикон','мягк','резин']):
             reason = 'soft_or_unsupported_type'
         elif weight is None:
@@ -72,7 +77,7 @@ def collect(pair):
         else:
             entries.append({'lure':{'id':'onlyspin-'+hashlib.sha256(path.encode()).hexdigest()[:16],
                 'maker':maker,'model':model,'type':lure_type,'weight':weight,
-                'color':color,'code':color,'photo':''}, 'source':'Onlyspin','url':BASE+path,'checkedAt':CHECKED})
+                'color':color,'code':color,'photo':onlyspin_photo(page)}, 'source':'Onlyspin','url':BASE+path,'checkedAt':CHECKED})
     except Exception as error:
         errors.append({'url':BASE+path,'error':str(error)})
     if (index+1)%10 == 0:
@@ -87,7 +92,7 @@ for e in entries:
     l=e['lure']; unique.setdefault(tuple(l[k].casefold() if isinstance(l[k],str) else l[k] for k in ['maker','model','type','weight','color','code']),e)
 entries=sorted(unique.values(),key=lambda e:(e['lure']['maker'],e['lure']['model'],e['lure']['weight'],e['lure']['code']))
 report={'checkedAt':CHECKED,'catalogPages':[BASE+p for p in PAGES], 'candidates':len(links),'accepted':len(entries),'skipped':skipped,'errors':errors,
-        'scope':'Starter selection from six catalogue pages; not the entire store. Soft lures excluded before visiting product pages; only exact product weights 0 < weight <= 5 included. Color field preserves store color/code without inferred color names.'}
+        'scope':'Retained verified cards plus all five pages of the 1089 brand catalogue; not the entire store. Soft lures excluded before visiting product pages; only exact product weights 0 < weight <= 5 included. Color field preserves store color/code without inferred color names.'}
 (ROOT/'scripts/onlyspin-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
 if report['errors']:
     raise SystemExit('Some cards failed: report saved; library left unchanged.')

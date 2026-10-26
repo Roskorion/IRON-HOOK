@@ -18,4 +18,16 @@ class Japan4youParserTests(unittest.TestCase):
         self.assertEqual(parse_japan4you(self.page('5'),'https://japan4you.ru/products/test','Кренк','2026-10-26')[0]['lure']['weight'],5)
         with self.assertRaises(ValueError):parse_japan4you(self.page('5.01'),'https://japan4you.ru/products/test','Кренк','2026-10-26')
 
+
+class OnlyspinPhotoTests(unittest.TestCase):
+    def test_product_picture_precedes_brand_logo_and_generic_og(self):
+        from shop_parsers import onlyspin_photo
+        soup=BeautifulSoup('''<img itemprop="image" src="/brand-logo.jpg"><meta property="og:image" content="https://onlyspin.ru/generic.jpg"><img class="detail-gallery-big__picture" src="/upload/variant-450.jpg">''','html.parser')
+        self.assertEqual(onlyspin_photo(soup),'https://onlyspin.ru/upload/variant-450.jpg')
+    def test_lazy_picture_and_missing_picture(self):
+        from shop_parsers import onlyspin_photo
+        soup=BeautifulSoup('<img class="detail-gallery-big__picture" src="data:image/gif;base64,x" data-src="/upload/variant.webp">','html.parser')
+        self.assertEqual(onlyspin_photo(soup),'https://onlyspin.ru/upload/variant.webp')
+        self.assertEqual(onlyspin_photo(BeautifulSoup('<img itemprop="image" src="/brand-logo.jpg">','html.parser')),'')
+
 if __name__=='__main__':unittest.main()

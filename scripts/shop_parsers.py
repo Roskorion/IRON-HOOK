@@ -32,3 +32,12 @@ def parse_japan4you(soup,url,kind,day):
         if not color or not variant.isdigit():continue
         result.append(entry('Japan4you',url+'?variant='+variant,'Timon',model,kind,weight,color,photo(option.get('data-attachment',''),'https://japan4you.ru/'),day))
     return result
+
+def onlyspin_photo(soup):
+    # Product gallery only; a generic [itemprop=image] may select a brand logo.
+    for image in soup.select('img.detail-gallery-big__picture'):
+        for value in [image.get('data-src',''),image.get('src','')]:
+            url=photo(value,'https://onlyspin.ru/')
+            if url:return url
+    meta=soup.select_one('meta[property="og:image"]')
+    return photo(meta.get('content','') if meta else '', 'https://onlyspin.ru/')

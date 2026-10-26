@@ -307,11 +307,11 @@ test("библиотека показывает по 24 варианта, пои
   await expect(
     page.getByRole("button", { name: "Следующая страница", exact: false }),
   ).toBeDisabled();
-  await page.getByLabel("Поиск в библиотеке").fill("Модель 1");
+  await page.getByLabel("Поиск в библиотеке").fill("Модель 3");
   await expect(
-    page.getByRole("heading", { name: "Модель 1", exact: true }),
+    page.getByRole("heading", { name: "Модель 3", exact: true }),
   ).toBeVisible();
-  await expect(library.locator("article")).toHaveCount(11);
+  await expect(library.locator("article")).toHaveCount(3);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -441,4 +441,136 @@ test("недоступная фотография показывает загл�
   await expect(page.getByRole("alert")).toContainText(
     "Не удалось загрузить библиотеку",
   );
+});
+
+test("1089 60FS присутствует с фото Onlyspin и находится по раздельным словам", async ({
+  page,
+  request,
+}) => {
+  const entries = await (await request.get("/lure-library.json")).json();
+  const variants = entries.filter(
+    (e: { source: string; lure: Lure }) =>
+      e.source === "Onlyspin" &&
+      e.lure.maker === "1089" &&
+      /60FS/i.test(e.lure.model),
+  );
+  expect(variants.length).toBeGreaterThan(0);
+  expect(
+    variants.every(
+      (e: { lure: Lure }) =>
+        e.lure.weight > 0 &&
+        e.lure.weight <= 5 &&
+        e.lure.photo.startsWith("https://onlyspin.ru/upload/"),
+    ),
+  ).toBeTruthy();
+  await page.goto("/");
+  await page.getByRole("button", { name: "Приманки", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Встроенная библиотека", exact: true })
+    .click();
+  await page
+    .getByRole("combobox", { name: "Источник", exact: true })
+    .selectOption("Onlyspin");
+  await page.getByLabel("Поиск в библиотеке").fill("1089 60FS");
+  await expect(
+    page.getByText(`Найдено вариантов: ${variants.length}`, { exact: true }),
+  ).toBeVisible();
+  const card = page
+    .locator('section[aria-label="Встроенная библиотека приманок"] article')
+    .first();
+  await expect(card).toContainText("60FS");
+  await expect(card.locator("img")).toHaveAttribute(
+    "src",
+    /^https:\/\/onlyspin\.ru\/upload\//,
+  );
+  await expect
+    .poll(() =>
+      card.locator("img").evaluate((i) => (i as HTMLImageElement).naturalWidth),
+    )
+    .toBeGreaterThan(0);
+  await card.getByRole("button", { name: "Добавить в мой каталог" }).click();
+  await page.getByRole("button", { name: "Сохранить", exact: true }).click();
+  await page
+    .getByPlaceholder("Поиск по модели, производителю или цвету…")
+    .fill("1089 60fs");
+  await expect(page.locator("article")).toHaveCount(1);
+  await expect(page.locator("article")).toContainText("60FS");
+});
+
+test("фото ранее сохранённой приманки добавляется без дубля и без замены своих фото", async ({
+  page,
+}) => {
+  await page.route("**/lure-library.json", (r) => r.fulfill({ json: fixture }));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Приманки", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Встроенная библиотека", exact: true })
+    .click();
+  await page.getByRole("button", { name: "Добавить в мой каталог" }).click();
+  await page.getByRole("button", { name: "Сохранить", exact: true }).click();
+  const before = await page.evaluate(
+    () => JSON.parse(localStorage.getItem("iron-hook-v1")!).lures,
+  );
+  const entry = {
+    ...fixture[0],
+    lure: {
+      ...fixture[0].lure,
+      photo: "https://onlyspin.ru/upload/test-450.jpg",
+    },
+  };
+  await page.route("**/lure-library.json", (r) => r.fulfill({ json: [entry] }));
+  await page
+    .getByRole("button", { name: "Встроенная библиотека", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Добавить фото в мой каталог", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("Фото добавлено");
+  const after = await page.evaluate(
+    () => JSON.parse(localStorage.getItem("iron-hook-v1")!).lures,
+  );
+  expect(after).toHaveLength(before.length);
+  const saved = after.find((l: Lure) => l.model === entry.lure.model);
+  expect(saved).toEqual({
+    ...before.find((l: Lure) => l.id === saved.id),
+    photo: entry.lure.photo,
+  });
+  await expect(
+    page.getByRole("button", { name: "Уже в моём каталоге", exact: true }),
+  ).toBeDisabled();
+  await page.getByRole("button", { name: "Мой каталог", exact: true }).click();
+  await expect(
+    page
+      .locator("article")
+      .filter({ has: page.getByRole("heading", { name: "Тестовая модель" }) })
+      .locator("img"),
+  ).toHaveAttribute("src", entry.lure.photo);
+  // A subsequent library photo must not overwrite the existing photo.
+  await page.route("**/lure-library.json", (r) =>
+    r.fulfill({
+      json: [
+        {
+          ...entry,
+          lure: {
+            ...entry.lure,
+            photo: "https://onlyspin.ru/upload/another.jpg",
+          },
+        },
+      ],
+    }),
+  );
+  await page
+    .getByRole("button", { name: "Встроенная библиотека", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Уже в моём каталоге", exact: true }),
+  ).toBeDisabled();
+  expect(
+    await page.evaluate(
+      () =>
+        JSON.parse(localStorage.getItem("iron-hook-v1")!).lures.find(
+          (l: { model: string }) => l.model === "Тестовая модель",
+        ).photo,
+    ),
+  ).toBe(entry.lure.photo);
 });

@@ -5,6 +5,7 @@ import {
   LIBRARY_TYPES,
   CATEGORY_LABELS,
   SOURCE_HOSTS,
+  matchesLure,
   type LibrarySource,
 } from "./lures";
 import { parseBackup } from "./backup";
@@ -54,12 +55,15 @@ function parseEntries(raw: unknown): Entry[] {
 export default function LureLibrary({
   owned,
   onChoose,
+  onUpdatePhoto,
 }: {
   owned: Lure[];
   onChoose: (l: Lure) => void;
+  onUpdatePhoto: (id: string, photo: string) => boolean;
 }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [status, setStatus] = useState("loading");
+  const [photoNotice, setPhotoNotice] = useState("");
   const [query, setQuery] = useState("");
   const [maker, setMaker] = useState("");
   const [type, setType] = useState("");
@@ -91,9 +95,7 @@ export default function LureLibrary({
       (!type || e.lure.type === type) &&
       (!source || e.source === source) &&
       (!weight || e.lure.weight === Number(weight)) &&
-      `${e.lure.maker} ${e.lure.model} ${e.lure.color} ${e.lure.code} ${e.lure.weight}`
-        .toLowerCase()
-        .includes(query.trim().toLowerCase()),
+      matchesLure(e.lure, query),
   );
   const pageSize = 24;
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -102,8 +104,8 @@ export default function LureLibrary({
     setCurrentPage(number);
     top.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
-  const isOwned = (l: Lure) =>
-    owned.some(
+  const findOwned = (l: Lure) =>
+    owned.find(
       (o) =>
         !o.demo &&
         o.maker.toLowerCase() === l.maker.toLowerCase() &&
@@ -112,6 +114,9 @@ export default function LureLibrary({
         o.color.toLowerCase() === l.color.toLowerCase() &&
         o.code.toLowerCase() === l.code.toLowerCase(),
     );
+  const isOwned = (l: Lure) => Boolean(findOwned(l));
+  const canFillPhoto = (l: Lure) =>
+    Boolean(l.photo && findOwned(l) && !findOwned(l)?.photo);
   return (
     <section ref={top} aria-label="Встроенная библиотека приманок">
       <p>
@@ -249,6 +254,7 @@ export default function LureLibrary({
       {status === "ready" && entries.length > 0 && (
         <p>Найдено вариантов: {filtered.length}</p>
       )}
+      {photoNotice && <p role="status">{photoNotice}</p>}
       <div className="cards">
         {filtered
           .slice((pageNumber - 1) * pageSize, pageNumber * pageSize)
@@ -279,10 +285,22 @@ export default function LureLibrary({
               <p className="footnote">Проверено: {checkedAt}</p>
               <button
                 className="primary"
-                disabled={isOwned(l)}
-                onClick={() => onChoose(l)}
+                disabled={isOwned(l) && !canFillPhoto(l)}
+                onClick={() => {
+                  const saved = findOwned(l);
+                  if (saved && canFillPhoto(l)) {
+                    if (onUpdatePhoto(saved.id, l.photo))
+                      setPhotoNotice(
+                        "Фото добавлено в личный каталог. Остальные данные не изменены.",
+                      );
+                  } else onChoose(l);
+                }}
               >
-                {isOwned(l) ? "Уже в моём каталоге" : "Добавить в мой каталог"}
+                {canFillPhoto(l)
+                  ? "Добавить фото в мой каталог"
+                  : isOwned(l)
+                    ? "Уже в моём каталоге"
+                    : "Добавить в мой каталог"}
               </button>
             </article>
           ))}

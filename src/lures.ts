@@ -40,3 +40,23 @@ export function safeImage(value: string): boolean {
     return false;
   }
 }
+
+export function matchesLure(
+  lure: {
+    maker: string;
+    model: string;
+    color: string;
+    code: string;
+    weight: number;
+  },
+  query: string,
+): boolean {
+  const text =
+    `${lure.maker} ${lure.model} ${lure.color} ${lure.code} ${lure.weight}`.toLowerCase();
+  return query
+    .trim()
+    .toLowerCase()
+    .split(/\s+/)
+    .filter(Boolean)
+    .every((token) => text.includes(token));
+}
