@@ -905,3 +905,12 @@ footer {
 .catalog-shortcut {
   margin: 0 0 18px;
 }
+.catch-row textarea {
+  min-height: 76px;
+  resize: vertical;
+}
+.rounds small,
+.bar-label span {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}

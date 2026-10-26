@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./App.css";
+import { catchDescription } from "./catches";
 import LureLibrary from "./LureLibrary";
 import LurePhoto from "./LurePhoto";
 import {
@@ -190,21 +191,31 @@ function App() {
   const all = data.trips.flatMap((t) => t.catches);
   const total = all.reduce((s, c) => s + c.count, 0);
   const rounds = data.trips.reduce((s, t) => s + t.rounds, 0);
-  const lureName = (id: string) => {
-    const l = data.lures.find((l) => l.id === id);
-    return l ? `${l.maker} ${l.model}` : "Удалённая приманка";
-  };
   const gearName = (id: string) =>
     data.gear.find((g) => g.id === id)?.name || "Не выбрано";
-  const ranking = data.lures
-    .map((l) => ({
+  const freeTextTotals = new Map<
+    string,
+    { id: string; label: string; value: number }
+  >();
+  all
+    .filter((c) => !c.lure)
+    .forEach((c) => {
+      const label = catchDescription(c, data.lures).trim();
+      const id = `comment:${label.toLowerCase()}`;
+      const entry = freeTextTotals.get(id);
+      if (entry) entry.value += c.count;
+      else freeTextTotals.set(id, { id, label, value: c.count });
+    });
+  const ranking = [
+    ...data.lures.map((l) => ({
       id: l.id,
       label: `${l.maker} ${l.model} · ${l.weight} г · ${l.color}`,
       value: all
         .filter((c) => c.lure === l.id)
         .reduce((s, c) => s + c.count, 0),
-    }))
-    .sort((a, b) => b.value - a.value);
+    })),
+    ...freeTextTotals.values(),
+  ].sort((a, b) => b.value - a.value);
   function remove(kind: "lures" | "gear" | "kits" | "trips", id: string) {
     if (kind === "lures" && all.some((c) => c.lure === id)) {
       alert(
@@ -679,7 +690,7 @@ function App() {
                           .filter((c) => c.round === i + 1)
                           .map((c) => (
                             <small key={c.id}>
-                              {lureName(c.lure)} × {c.count}
+                              {catchDescription(c, data.lures)} × {c.count}
                             </small>
                           ))}
                       </div>
@@ -701,6 +712,11 @@ function App() {
                       ? "Статистика по весам"
                       : "Статистика по цветам"}
                   </h2>
+                  <p className="footnote">
+                    Здесь учитываются ранее записанные уловы со связью с
+                    каталогом. Для свободных комментариев вес и цвет не
+                    определяются автоматически.
+                  </p>
                   <Bars
                     items={Object.entries(
                       all.reduce<Record<string, number>>((acc, c) => {
@@ -911,7 +927,10 @@ function Editor({
   });
   const [rounds, setRounds] = useState((existing as Trip)?.rounds || 1);
   const [catches, setCatches] = useState<Catch[]>(
-    (existing as Trip)?.catches || [],
+    ((existing as Trip)?.catches || []).map((c) => ({
+      ...c,
+      lureText: catchDescription(c, data.lures),
+    })),
   );
   const field = (
     name: string,
@@ -1013,7 +1032,7 @@ function Editor({
       if (
         catches.some(
           (c) =>
-            !c.lure ||
+            !c.lureText?.trim() ||
             c.round > rounds ||
             !Number.isInteger(c.count) ||
             c.count < 1 ||
@@ -1022,7 +1041,7 @@ function Editor({
         )
       ) {
         alert(
-          "Проверьте уловы: выберите приманку, целый номер тура и количество рыб от 1. Номер тура не может превышать число туров.",
+          "Проверьте уловы: напишите приманку или комментарий, целый номер тура и количество рыб от 1. Номер тура не может превышать число туров.",
         );
         return;
       }
@@ -1033,7 +1052,7 @@ function Editor({
         weather: s("weather"),
         type: s("type"),
         rounds,
-        catches,
+        catches: catches.map((c) => ({ ...c, lureText: c.lureText?.trim() })),
         demo: existing?.demo,
       };
       next = {
@@ -1218,14 +1237,14 @@ function Editor({
                     <h3>Уловы по турам</h3>
                     <button
                       type="button"
-                      disabled={!data.lures.length}
                       onClick={() =>
                         setCatches([
                           ...catches,
                           {
                             id: uid(),
                             round: 1,
-                            lure: data.lures[0].id,
+                            lure: "",
+                            lureText: "",
                             count: 1,
                           },
                         ])
@@ -1234,12 +1253,10 @@ function Editor({
                       ＋ Добавить улов
                     </button>
                   </div>
-                  {!data.lures.length && (
-                    <p className="notice">
-                      Для записи уловов сначала добавьте приманку в каталог.
-                      Рыбалку без улова можно сохранить сейчас.
-                    </p>
-                  )}
+                  <p className="footnote">
+                    Запишите приманку и любые заметки свободным текстом. Каталог
+                    для записи улова не требуется.
+                  </p>
                   {catches.map((c) => (
                     <div className="catch-row" key={c.id}>
                       <label>
@@ -1264,25 +1281,22 @@ function Editor({
                       </label>
                       <label>
                         Приманка
-                        <select
-                          value={c.lure}
+                        <textarea
+                          value={c.lureText ?? ""}
                           required
+                          maxLength={2000}
+                          rows={2}
+                          placeholder="Например: 1089 60FS, розовая, медленная проводка"
                           onChange={(e) =>
                             setCatches(
                               catches.map((x) =>
                                 x.id === c.id
-                                  ? { ...x, lure: e.target.value }
+                                  ? { ...x, lure: "", lureText: e.target.value }
                                   : x,
                               ),
                             )
                           }
-                        >
-                          {data.lures.map((l) => (
-                            <option key={l.id} value={l.id}>
-                              {l.maker} {l.model} · {l.color}
-                            </option>
-                          ))}
-                        </select>
+                        />
                       </label>
                       <label>
                         Рыб

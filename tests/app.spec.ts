@@ -17,6 +17,7 @@ test("приманка, дневник, статистика и сохранен
   await page.getByLabel("Водоём").fill("Наш пруд");
   await page.getByLabel("Количество туров").fill("2");
   await page.getByRole("button", { name: "Добавить улов" }).click();
+  await page.getByLabel("Приманка", { exact: true }).fill("Test brand Winner");
   await page.getByLabel("Рыб", { exact: true }).fill("5");
   await page.getByRole("button", { name: "Сохранить", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Наш пруд" })).toBeVisible();
@@ -161,13 +162,11 @@ test("ошибочные файлы не меняют дневник; восст
       ],
     }),
   ]) {
-    await page
-      .locator("footer input[type=file]")
-      .setInputFiles({
-        name: "backup.json",
-        mimeType: "application/json",
-        buffer: Buffer.from(payload),
-      });
+    await page.locator("footer input[type=file]").setInputFiles({
+      name: "backup.json",
+      mimeType: "application/json",
+      buffer: Buffer.from(payload),
+    });
     await expect(page.getByRole("alert")).toContainText(
       "Текущие записи не изменены",
     );
@@ -179,13 +178,11 @@ test("ошибочные файлы не меняют дневник; восст
       await page.evaluate(() => localStorage.getItem("iron-hook-v1")),
     ).toBeNull();
   }
-  await page
-    .locator("footer input[type=file]")
-    .setInputFiles({
-      name: "large.json",
-      mimeType: "application/json",
-      buffer: Buffer.alloc(10 * 1024 * 1024 + 1, 32),
-    });
+  await page.locator("footer input[type=file]").setInputFiles({
+    name: "large.json",
+    mimeType: "application/json",
+    buffer: Buffer.alloc(10 * 1024 * 1024 + 1, 32),
+  });
   await expect(page.getByRole("alert")).toContainText("Файл слишком большой");
   await page.evaluate(() => localStorage.setItem("iron-hook-v1", "{broken"));
   await page.reload();

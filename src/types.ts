@@ -25,7 +25,13 @@ export type Kit = {
   leader: string;
   demo?: boolean;
 };
-export type Catch = { id: string; round: number; lure: string; count: number };
+export type Catch = {
+  id: string;
+  round: number;
+  lure: string;
+  lureText?: string;
+  count: number;
+};
 export type Trip = {
   id: string;
   date: string;

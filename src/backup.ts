@@ -116,11 +116,15 @@ export function parseBackup(raw: string): Data {
   const trips = list(d.trips).map((t) => {
     const rounds = number(t.rounds, 1, 30, true);
     const catches = list(t.catches).map((c) => {
-      const lure = required(c.lure);
-      if (!lures.some((l) => l.id === lure)) fail();
+      const lure = c.lure === undefined ? "" : text(c.lure);
+      const lureText =
+        c.lureText === undefined ? undefined : required(c.lureText);
+      if (lure && !lures.some((l) => l.id === lure)) fail();
+      if (!lure && !lureText) fail();
       return {
         id: required(c.id),
         lure,
+        ...(lureText === undefined ? {} : { lureText }),
         round: number(c.round, 1, rounds, true),
         count: number(c.count, 1, Number.MAX_SAFE_INTEGER, true),
       };
