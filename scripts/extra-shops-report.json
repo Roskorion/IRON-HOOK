@@ -1,0 +1,40 @@
+{
+  "checkedAt": "2026-10-26",
+  "selection": "21 Japan4you products and up to 8 variants from each of 6 Baita models. Not the entire shops.",
+  "accepted": 229,
+  "bySource": {
+    "Japan4you": 199,
+    "Baita": 30
+  },
+  "skipped": [
+    {
+      "url": "https://japan4you.ru/products/timon-chibi-pepino-mr",
+      "reason": "unverified_brand_model"
+    },
+    {
+      "url": "https://japan4you.ru/products/chibi-quattro-spoon-06g",
+      "reason": "unverified_brand_model"
+    },
+    {
+      "url": "https://japan4you.ru/products/chibi-quattro-spoon-04g",
+      "reason": "unverified_brand_model"
+    },
+    {
+      "url": "https://japan4you.ru/products/chibi-quattro-spoon-08g",
+      "reason": "unverified_brand_model"
+    },
+    {
+      "url": "https://baita.ru/product/vobler-rodio-craft-moca-dr-ss-bluegreen-glow-azuki-limited/",
+      "reason": "missing_explicit_weight"
+    },
+    {
+      "url": "https://baita.ru/product/rattlin-valkein-shine-ride-nano-2-8-gr/",
+      "reason": "missing_color"
+    },
+    {
+      "url": "https://baita.ru/product/vobler-rodio-craft-moca-fat-dr-ss-smile-glow-azuki-limited/",
+      "reason": "missing_brand_model"
+    }
+  ],
+  "errors": []
+}

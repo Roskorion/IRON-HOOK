@@ -1,6 +1,8 @@
 import { useState } from "react";
 import "./App.css";
 import LureLibrary from "./LureLibrary";
+import LurePhoto from "./LurePhoto";
+import { LURE_TYPES, CATEGORY_LABELS } from "./lures";
 import type { Lure, Gear, Kit, Catch, Trip, Data } from "./types";
 import { parseBackup, MAX_BACKUP_BYTES } from "./backup";
 
@@ -154,6 +156,14 @@ function App() {
   const [edit, setEdit] = useState("");
   const [search, setSearch] = useState("");
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [myLureType, setMyLureType] = useState("");
+  const visibleLures = data.lures.filter(
+    (l) =>
+      (!myLureType || l.type === myLureType) &&
+      `${l.maker} ${l.model} ${l.color} ${l.code}`
+        .toLowerCase()
+        .includes(search.toLowerCase()),
+  );
   const [lurePreset, setLurePreset] = useState<Lure | undefined>();
   function commit(next: Data, recovering = false) {
     if (storageBroken && !recovering) {
@@ -525,6 +535,20 @@ function App() {
               />
             ) : (
               <>
+                <label className="my-category">
+                  Категория моих приманок
+                  <select
+                    value={myLureType}
+                    onChange={(e) => setMyLureType(e.target.value)}
+                  >
+                    <option value="">Все категории</option>
+                    {LURE_TYPES.map((t) => (
+                      <option key={t} value={t}>
+                        {CATEGORY_LABELS[t] || t}
+                      </option>
+                    ))}
+                  </select>
+                </label>
                 <input
                   className="search"
                   placeholder="Поиск по модели, производителю или цвету…"
@@ -532,47 +556,28 @@ function App() {
                   onChange={(e) => setSearch(e.target.value)}
                 />
                 <div className="cards">
-                  {data.lures
-                    .filter((l) =>
-                      `${l.maker} ${l.model} ${l.color} ${l.code}`
-                        .toLowerCase()
-                        .includes(search.toLowerCase()),
-                    )
-                    .map((l) => (
-                      <article className="panel lure-card" key={l.id}>
-                        <div className="lure-image">
-                          {l.photo ? (
-                            <img src={l.photo} alt={`${l.maker} ${l.model}`} />
-                          ) : (
-                            <span
-                              className="spoon"
-                              style={{
-                                background:
-                                  l.color === "Розовый"
-                                    ? "linear-gradient(130deg,#ff4268,#e4d1d3)"
-                                    : l.color === "Золотой"
-                                      ? "linear-gradient(130deg,#d8a34e,#fff3bb)"
-                                      : "linear-gradient(130deg,#6e8054,#d3dac7)",
-                              }}
-                            >
-                              •
-                            </span>
-                          )}
-                          {badge(l.demo)}
-                        </div>
-                        <span className="eyebrow">{l.maker}</span>
-                        <h2>{l.model}</h2>
-                        <p>
-                          {l.type} · {l.weight} г
-                        </p>
-                        <div className="specs">
-                          {l.color} <span>Код: {l.code || "—"}</span>
-                        </div>
-                        {actions("lures", l.id, "lure")}
-                      </article>
-                    ))}
+                  {visibleLures.map((l) => (
+                    <article className="panel lure-card" key={l.id}>
+                      <div className="lure-image">
+                        <LurePhoto
+                          photo={l.photo}
+                          name={`${l.maker} ${l.model} · ${l.color}`}
+                        />
+                        {badge(l.demo)}
+                      </div>
+                      <span className="eyebrow">{l.maker}</span>
+                      <h2>{l.model}</h2>
+                      <p>
+                        {l.type} · {l.weight} г
+                      </p>
+                      <div className="specs">
+                        {l.color} <span>Код: {l.code || "—"}</span>
+                      </div>
+                      {actions("lures", l.id, "lure")}
+                    </article>
+                  ))}
                 </div>
-                {!data.lures.length && <Empty />}
+                {!visibleLures.length && <Empty />}
               </>
             )}
           </>
@@ -819,7 +824,11 @@ function App() {
           save={(next) => {
             if (commit(next)) {
               setModal(null);
-              if (lurePreset) setLibraryOpen(false);
+              if (lurePreset) {
+                setLibraryOpen(false);
+                setMyLureType("");
+                setSearch("");
+              }
             }
           }}
         />
@@ -1059,12 +1068,7 @@ function Editor({
                   <div className="form-grid">
                     {field("maker", "Производитель", l?.maker)}
                     {field("model", "Модель", l?.model)}
-                    {select(
-                      "type",
-                      "Тип",
-                      ["Блесна", "Воблер", "Цикада", "Силикон", "Другое"],
-                      l?.type,
-                    )}
+                    {select("type", "Тип", LURE_TYPES, l?.type)}
                     {field("weight", "Вес, г", l?.weight ?? 1, "number")}
                     {field("color", "Цвет", l?.color)}
                     {field("code", "Код расцветки", l?.code, "text", false)}

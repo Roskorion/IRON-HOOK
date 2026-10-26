@@ -1,4 +1,24 @@
 import { test, expect } from "@playwright/test";
+import {
+  LIBRARY_TYPES,
+  SOURCE_HOSTS,
+  safeImage,
+  type LibrarySource,
+} from "../src/lures";
+import type { Lure } from "../src/types";
+const pixel = Buffer.from(
+  "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=",
+  "base64",
+);
+test.beforeEach(async ({ page }) => {
+  await page.route(
+    /^https:\/\/(?:www\.)?(?:onlyspin\.ru|jpsnasti\.ru|japan4you\.ru|baita\.ru)\//,
+    (r) =>
+      r.request().resourceType() === "image"
+        ? r.fulfill({ contentType: "image/png", body: pixel })
+        : r.fallback(),
+  );
+});
 const fixture = [
   {
     lure: {
@@ -158,13 +178,17 @@ test("библиотека исключает мягкие приманки и �
   ).toHaveCount(0);
 });
 
-test("поставляемая библиотека содержит варианты обоих магазинов до 5 г", async ({
+test("поставляемая библиотека содержит четыре источника и только твёрдые приманки до 5 г", async ({
   page,
   request,
 }) => {
   const response = await request.get("/lure-library.json");
   expect(response.ok()).toBeTruthy();
-  const entries = await response.json();
+  const entries = (await response.json()) as {
+    lure: Lure;
+    source: LibrarySource;
+    url: string;
+  }[];
   expect(entries.length).toBeGreaterThan(20);
   expect(
     entries.filter((e: { source: string }) => e.source === "Onlyspin").length,
@@ -175,20 +199,24 @@ test("поставляемая библиотека содержит вариа�
   expect(
     new Set(entries.map((e: { lure: { id: string } }) => e.lure.id)).size,
   ).toBe(entries.length);
-  for (const entry of entries) {
-    expect(["Блесна", "Воблер", "Цикада"]).toContain(entry.lure.type);
-    expect(entry.lure.weight).toBeGreaterThan(0);
-    expect(entry.lure.weight).toBeLessThanOrEqual(5);
-    expect(["Onlyspin", "Japsnasti"]).toContain(entry.source);
-    expect(entry.url).toMatch(
-      entry.source === "Onlyspin"
-        ? /^https:\/\/onlyspin\.ru\/catalog\/product\//
-        : /^https:\/\/www\.jpsnasti\.ru\/primanki\//,
-    );
-    expect(entry.lure.maker).not.toBe("");
-    expect(entry.lure.model).not.toBe("");
-    expect(entry.lure.code).not.toBe("");
-  }
+  for (const source of Object.keys(SOURCE_HOSTS))
+    expect(entries.some((e) => e.source === source)).toBeTruthy();
+  expect(
+    entries.every(
+      (e) =>
+        (LIBRARY_TYPES as readonly string[]).includes(e.lure.type) &&
+        e.lure.weight > 0 &&
+        e.lure.weight <= 5 &&
+        e.lure.maker &&
+        e.lure.model &&
+        e.lure.code &&
+        safeImage(e.lure.photo) &&
+        new URL(e.url).protocol === "https:" &&
+        SOURCE_HOSTS[e.source].includes(new URL(e.url).hostname),
+    ),
+  ).toBeTruthy();
+  for (const type of LIBRARY_TYPES)
+    expect(entries.some((e) => e.lure.type === type)).toBeTruthy();
   await page.goto("/");
   await page.getByRole("button", { name: "Приманки", exact: true }).click();
   await page
@@ -289,4 +317,128 @@ test("библиотека показывает по 24 варианта, пои
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBeTruthy();
+});
+
+test("шесть категорий, фото из магазина и восстановление копии с новым типом", async ({
+  page,
+}) => {
+  const types = ["Блесна", "Воблер", "Кренк", "Цикада", "Виб", "Раттлин"];
+  const entries = types.map((type, i) => ({
+    ...fixture[0],
+    source: i % 2 ? "Baita" : "Japan4you",
+    url:
+      i % 2
+        ? "https://baita.ru/product/test/"
+        : "https://japan4you.ru/products/test",
+    lure: {
+      ...fixture[0].lure,
+      id: `category-${i}`,
+      type,
+      model: `Вариант ${type}`,
+      photo: "https://japan4you.ru/files/downloads/test.jpg",
+    },
+  }));
+  await page.route("**/lure-library.json", (r) => r.fulfill({ json: entries }));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Приманки", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Встроенная библиотека", exact: true })
+    .click();
+  for (const [category, type] of [
+    ["Блёсны", "Блесна"],
+    ["Воблеры", "Воблер"],
+    ["Кренки", "Кренк"],
+    ["Цикады", "Цикада"],
+    ["Вибы", "Виб"],
+    ["Раттлины", "Раттлин"],
+  ]) {
+    await page.getByRole("button", { name: category, exact: true }).click();
+    await expect(
+      page.getByRole("heading", { name: `Вариант ${type}`, exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.locator(
+        'section[aria-label="Встроенная библиотека приманок"] article',
+      ),
+    ).toHaveCount(1);
+  }
+  await page.getByRole("button", { name: "Кренки", exact: true }).click();
+  const image = page.locator(
+    'section[aria-label="Встроенная библиотека приманок"] img',
+  );
+  await expect(image).toHaveAttribute(
+    "src",
+    "https://japan4you.ru/files/downloads/test.jpg",
+  );
+  await expect
+    .poll(() => image.evaluate((img) => (img as HTMLImageElement).naturalWidth))
+    .toBeGreaterThan(0);
+  await page.getByRole("button", { name: "Добавить в мой каталог" }).click();
+  await expect(
+    page
+      .getByRole("dialog")
+      .getByRole("combobox", { name: "Тип", exact: true }),
+  ).toHaveValue("Кренк");
+  await page.getByRole("button", { name: "Сохранить", exact: true }).click();
+  const download = page.waitForEvent("download");
+  await page
+    .getByRole("button", { name: "↓ Резервная копия", exact: true })
+    .click();
+  const path = await (await download).path();
+  await page.locator("footer input[type=file]").setInputFiles(path!);
+  await page
+    .getByRole("button", { name: "Заменить данные и восстановить" })
+    .click();
+  await page.reload();
+  await page.getByRole("button", { name: "Приманки", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Вариант Кренк" }),
+  ).toBeVisible();
+  await expect(
+    page
+      .locator("article")
+      .filter({ has: page.getByRole("heading", { name: "Вариант Кренк" }) })
+      .locator("img"),
+  ).toHaveAttribute("src", "https://japan4you.ru/files/downloads/test.jpg");
+});
+
+test("недоступная фотография показывает заглушку, посторонний домен отклоняется", async ({
+  page,
+}) => {
+  const entry = {
+    ...fixture[0],
+    source: "Baita",
+    url: "https://baita.ru/product/test/",
+    lure: {
+      ...fixture[0].lure,
+      photo: "https://baita.ru/wp-content/uploads/test.jpg",
+    },
+  };
+  await page.route(entry.lure.photo, (r) => r.abort());
+  await page.route("**/lure-library.json", (r) => r.fulfill({ json: [entry] }));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Приманки", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Встроенная библиотека", exact: true })
+    .click();
+  await expect(
+    page.getByText("Фото недоступно", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Мой каталог", exact: true }).click();
+  await page.route("**/lure-library.json", (r) =>
+    r.fulfill({
+      json: [
+        {
+          ...entry,
+          lure: { ...entry.lure, photo: "https://example.com/track.jpg" },
+        },
+      ],
+    }),
+  );
+  await page
+    .getByRole("button", { name: "Встроенная библиотека", exact: true })
+    .click();
+  await expect(page.getByRole("alert")).toContainText(
+    "Не удалось загрузить библиотеку",
+  );
 });

@@ -47,6 +47,9 @@ def collect(pair):
                 html=response.read().decode('utf-8')
             cache.write_text(html)
         soup=BeautifulSoup(html,'html.parser')
+        # This series is explicitly described as a sinking crank on its page.
+        if path.endswith('voblery_valkein_haze_nano_ss') and any('серия тонущих кренков' in p.get_text(' ',strip=True).lower() for p in soup.find_all('p')):
+            kind='Кренк'
         entries, skipped, seen = [], [], set()
         for a in soup.select('.title a[href]'):
             link=a['href']; title=a.get_text(' ',strip=True)
@@ -69,8 +72,13 @@ def collect(pair):
             if not 0<weight<=5:
                 skipped.append({'url':link,'reason':'over_5g_or_zero','weight':weight})
                 continue
+            card=a.find_parent('div',class_='p-card')
+            image=card.select_one('img[itemprop=image]') if card else None
+            image_url=image.get('src','') if image else ''
+            if not image_url.startswith(BASE+'/') or not re.search(r'\.(?:jpg|jpeg|png|webp)(?:\?|$)',image_url,re.I):
+                image_url=''
             entries.append({'lure':{'id':'jpsnasti-'+hashlib.sha256(link.encode()).hexdigest()[:16],
-                'maker':maker,'model':model,'type':kind,'weight':weight,'color':color,'code':color,'photo':''},
+                'maker':maker,'model':model,'type':kind,'weight':weight,'color':color,'code':color,'photo':image_url},
                 'source':'Japsnasti','url':link,'checkedAt':CHECKED})
         if not seen:
             raise ValueError('No variant rows found; inspect the page structure or series URL')

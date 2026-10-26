@@ -875,3 +875,30 @@ footer {
     order: -1;
   }
 }
+.category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0;
+}
+.category-tabs button[aria-pressed="true"] {
+  background: #ed3e4a;
+  border-color: #ed3e4a;
+}
+.photo-placeholder {
+  font-size: 12px;
+  color: #9c9fa9;
+  text-align: center;
+  padding: 20px;
+}
+.library-filters .footnote {
+  margin: 0;
+}
+.my-category {
+  display: grid;
+  gap: 8px;
+  max-width: 520px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: #a9acb8;
+}

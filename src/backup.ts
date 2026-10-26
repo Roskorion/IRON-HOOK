@@ -1,4 +1,5 @@
 import type { Data } from "./types";
+import { LURE_TYPES, safeImage } from "./lures";
 export const MAX_BACKUP_BYTES = 10 * 1024 * 1024;
 type Row = Record<string, unknown>;
 function fail(): never {
@@ -71,16 +72,12 @@ export function parseBackup(raw: string): Data {
   const d = row(parsed);
   const lures = list(d.lures).map((l) => {
     const photo = text(l.photo, MAX_BACKUP_BYTES);
-    if (
-      photo &&
-      !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=\r\n]+$/.test(photo)
-    )
-      fail();
+    if (!safeImage(photo)) fail();
     return {
       id: required(l.id),
       maker: required(l.maker),
       model: required(l.model),
-      type: choice(l.type, ["Блесна", "Воблер", "Цикада", "Силикон", "Другое"]),
+      type: choice(l.type, LURE_TYPES),
       weight: number(l.weight, 0, Number.MAX_VALUE),
       color: required(l.color),
       code: text(l.code),

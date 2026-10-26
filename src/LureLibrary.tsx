@@ -1,10 +1,17 @@
 import { useEffect, useRef, useState } from "react";
 import type { Lure } from "./types";
+import LurePhoto from "./LurePhoto";
+import {
+  LIBRARY_TYPES,
+  CATEGORY_LABELS,
+  SOURCE_HOSTS,
+  type LibrarySource,
+} from "./lures";
 import { parseBackup } from "./backup";
 
 type Entry = {
   lure: Lure;
-  source: "Onlyspin" | "Japsnasti";
+  source: LibrarySource;
   url: string;
   checkedAt: string;
 };
@@ -14,13 +21,11 @@ function parseEntries(raw: unknown): Entry[] {
   const entries = raw.map((value): Entry => {
     if (!value || typeof value !== "object") throw Error("Неверная карточка");
     const { source, url, checkedAt, lure } = value;
-    if (source !== "Onlyspin" && source !== "Japsnasti")
+    if (!Object.hasOwn(SOURCE_HOSTS, source))
       throw Error("Неизвестный источник");
+    const typedSource = source as LibrarySource;
     const link = new URL(url);
-    const hosts =
-      source === "Onlyspin"
-        ? ["onlyspin.ru", "www.onlyspin.ru"]
-        : ["jpsnasti.ru", "www.jpsnasti.ru"];
+    const hosts = SOURCE_HOSTS[typedSource];
     if (
       link.protocol !== "https:" ||
       !hosts.includes(link.hostname) ||
@@ -34,14 +39,14 @@ function parseEntries(raw: unknown): Entry[] {
     const validated = parseBackup(
       JSON.stringify({ lures: [lure], gear: [], kits: [], trips: [] }),
     ).lures[0];
-    return { lure: validated, source, url: link.href, checkedAt };
+    return { lure: validated, source: typedSource, url: link.href, checkedAt };
   });
   if (new Set(entries.map((e) => e.lure.id)).size !== entries.length)
     throw Error("Повторяющиеся карточки");
   // Ограничение относится только к встроенной библиотеке, не к личным записям.
   return entries.filter(
     ({ lure }) =>
-      ["Блесна", "Воблер", "Цикада"].includes(lure.type) &&
+      (LIBRARY_TYPES as readonly string[]).includes(lure.type) &&
       lure.weight > 0 &&
       lure.weight <= 5,
   );
@@ -119,6 +124,38 @@ export default function LureLibrary({
         не полный ассортимент магазинов. Если магазин указывает только код
         расцветки, он сохранён без выдуманного названия цвета.
       </div>
+      <div
+        className="category-tabs"
+        role="group"
+        aria-label="Категории приманок"
+      >
+        <button
+          aria-pressed={!type}
+          onClick={() => {
+            setType("");
+            setCurrentPage(1);
+          }}
+        >
+          Все категории
+        </button>
+        {LIBRARY_TYPES.map((t) => (
+          <button
+            key={t}
+            aria-pressed={type === t}
+            onClick={() => {
+              setType(t);
+              setCurrentPage(1);
+            }}
+          >
+            {CATEGORY_LABELS[t]}
+          </button>
+        ))}
+      </div>
+      <p className="footnote">
+        Кренки выделены из воблеров. Вибы и раттлины разделены по категории
+        магазина. Фотографии загружаются с сайтов-источников и могут быть
+        недоступны; свои фото можно добавить при сохранении приманки.
+      </p>
       <div className="library-filters">
         <label>
           Поиск в библиотеке
@@ -190,8 +227,9 @@ export default function LureLibrary({
             }}
           >
             <option value="">Все источники</option>
-            <option>Onlyspin</option>
-            <option>Japsnasti</option>
+            {Object.keys(SOURCE_HOSTS).map((s) => (
+              <option key={s}>{s}</option>
+            ))}
           </select>
         </label>
       </div>
@@ -216,6 +254,12 @@ export default function LureLibrary({
           .slice((pageNumber - 1) * pageSize, pageNumber * pageSize)
           .map(({ lure: l, source, url, checkedAt }) => (
             <article className="panel" key={l.id}>
+              <div className="lure-image">
+                <LurePhoto
+                  photo={l.photo}
+                  name={`${l.maker} ${l.model} · ${l.color}`}
+                />
+              </div>
               <span className="eyebrow">{l.maker}</span>
               <h2>{l.model}</h2>
               <p>
