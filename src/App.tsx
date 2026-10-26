@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./App.css";
+import LureLibrary from "./LureLibrary";
 import type { Lure, Gear, Kit, Catch, Trip, Data } from "./types";
 import { parseBackup, MAX_BACKUP_BYTES } from "./backup";
 
@@ -152,6 +153,8 @@ function App() {
   );
   const [edit, setEdit] = useState("");
   const [search, setSearch] = useState("");
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [lurePreset, setLurePreset] = useState<Lure | undefined>();
   function commit(next: Data, recovering = false) {
     if (storageBroken && !recovering) {
       alert(error);
@@ -171,6 +174,7 @@ function App() {
     }
   }
   function open(kind: typeof modal, id = "") {
+    setLurePreset(undefined);
     setEdit(id);
     setModal(kind);
   }
@@ -493,54 +497,84 @@ function App() {
         )}
         {page === 1 && (
           <>
-            <input
-              className="search"
-              placeholder="Поиск по модели, производителю или цвету…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <div className="cards">
-              {data.lures
-                .filter((l) =>
-                  `${l.maker} ${l.model} ${l.color} ${l.code}`
-                    .toLowerCase()
-                    .includes(search.toLowerCase()),
-                )
-                .map((l) => (
-                  <article className="panel lure-card" key={l.id}>
-                    <div className="lure-image">
-                      {l.photo ? (
-                        <img src={l.photo} alt={`${l.maker} ${l.model}`} />
-                      ) : (
-                        <span
-                          className="spoon"
-                          style={{
-                            background:
-                              l.color === "Розовый"
-                                ? "linear-gradient(130deg,#ff4268,#e4d1d3)"
-                                : l.color === "Золотой"
-                                  ? "linear-gradient(130deg,#d8a34e,#fff3bb)"
-                                  : "linear-gradient(130deg,#6e8054,#d3dac7)",
-                          }}
-                        >
-                          •
-                        </span>
-                      )}
-                      {badge(l.demo)}
-                    </div>
-                    <span className="eyebrow">{l.maker}</span>
-                    <h2>{l.model}</h2>
-                    <p>
-                      {l.type} · {l.weight} г
-                    </p>
-                    <div className="specs">
-                      {l.color} <span>Код: {l.code || "—"}</span>
-                    </div>
-                    {actions("lures", l.id, "lure")}
-                  </article>
-                ))}
+            <div
+              className="library-tabs"
+              role="group"
+              aria-label="Каталоги приманок"
+            >
+              <button
+                aria-pressed={!libraryOpen}
+                onClick={() => setLibraryOpen(false)}
+              >
+                Мой каталог
+              </button>
+              <button
+                aria-pressed={libraryOpen}
+                onClick={() => setLibraryOpen(true)}
+              >
+                Встроенная библиотека
+              </button>
             </div>
-            {!data.lures.length && <Empty />}
+            {libraryOpen ? (
+              <LureLibrary
+                owned={data.lures}
+                onChoose={(l) => {
+                  open("lure");
+                  setLurePreset({ ...l, id: "", demo: false });
+                }}
+              />
+            ) : (
+              <>
+                <input
+                  className="search"
+                  placeholder="Поиск по модели, производителю или цвету…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+                <div className="cards">
+                  {data.lures
+                    .filter((l) =>
+                      `${l.maker} ${l.model} ${l.color} ${l.code}`
+                        .toLowerCase()
+                        .includes(search.toLowerCase()),
+                    )
+                    .map((l) => (
+                      <article className="panel lure-card" key={l.id}>
+                        <div className="lure-image">
+                          {l.photo ? (
+                            <img src={l.photo} alt={`${l.maker} ${l.model}`} />
+                          ) : (
+                            <span
+                              className="spoon"
+                              style={{
+                                background:
+                                  l.color === "Розовый"
+                                    ? "linear-gradient(130deg,#ff4268,#e4d1d3)"
+                                    : l.color === "Золотой"
+                                      ? "linear-gradient(130deg,#d8a34e,#fff3bb)"
+                                      : "linear-gradient(130deg,#6e8054,#d3dac7)",
+                              }}
+                            >
+                              •
+                            </span>
+                          )}
+                          {badge(l.demo)}
+                        </div>
+                        <span className="eyebrow">{l.maker}</span>
+                        <h2>{l.model}</h2>
+                        <p>
+                          {l.type} · {l.weight} г
+                        </p>
+                        <div className="specs">
+                          {l.color} <span>Код: {l.code || "—"}</span>
+                        </div>
+                        {actions("lures", l.id, "lure")}
+                      </article>
+                    ))}
+                </div>
+                {!data.lures.length && <Empty />}
+              </>
+            )}
           </>
         )}
         {page === 2 && (
@@ -780,9 +814,13 @@ function App() {
           kind={modal}
           id={edit}
           data={data}
+          preset={lurePreset}
           close={() => setModal(null)}
           save={(next) => {
-            if (commit(next)) setModal(null);
+            if (commit(next)) {
+              setModal(null);
+              if (lurePreset) setLibraryOpen(false);
+            }
           }}
         />
       )}
@@ -817,12 +855,14 @@ function Bars({ items }: { items: { label: string; value: number }[] }) {
   );
 }
 function Editor({
+  preset,
   kind,
   id,
   data,
   close,
   save,
 }: {
+  preset?: Lure;
   kind: "lure" | "gear" | "kit" | "trip";
   id: string;
   data: Data;
@@ -831,7 +871,7 @@ function Editor({
 }) {
   const existing =
     kind === "lure"
-      ? data.lures.find((x) => x.id === id)
+      ? (data.lures.find((x) => x.id === id) ?? preset)
       : kind === "gear"
         ? data.gear.find((x) => x.id === id)
         : kind === "kit"

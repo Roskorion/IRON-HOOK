@@ -796,3 +796,53 @@ footer {
   outline: 2px solid #ff4b56;
   outline-offset: 3px;
 }
+.library-tabs {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+.library-tabs button[aria-pressed="true"] {
+  background: #ed3e4a;
+  border-color: #ed3e4a;
+  color: white;
+}
+.library-filters {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 12px;
+  margin: 22px 0;
+}
+.library-filters label {
+  font-size: 12px;
+  color: #a9acb8;
+  display: grid;
+  gap: 8px;
+}
+.source-link {
+  color: #fa727b;
+  font-size: 12px;
+  text-decoration: underline;
+}
+.source-link:hover {
+  color: white;
+}
+.source-link ~ button {
+  margin-top: 20px;
+  white-space: normal;
+}
+@media (max-width: 1100px) {
+  .library-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 700px) {
+  .library-filters {
+    grid-template-columns: 1fr;
+  }
+}
+@media (min-width: 1101px) {
+  .library-filters {
+    grid-template-columns: 2fr repeat(4, minmax(0, 1fr));
+  }
+}
