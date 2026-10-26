@@ -846,3 +846,32 @@ footer {
     grid-template-columns: 2fr repeat(4, minmax(0, 1fr));
   }
 }
+.library-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 24px 0;
+}
+.library-pagination span {
+  font-size: 12px;
+  color: #acb0bd;
+}
+.library-pagination button {
+  white-space: normal;
+}
+@media (max-width: 700px) {
+  .library-pagination {
+    gap: 10px;
+  }
+  .library-pagination button {
+    font-size: 11px;
+    padding: 10px;
+  }
+  .library-pagination span {
+    width: 100%;
+    text-align: center;
+    order: -1;
+  }
+}

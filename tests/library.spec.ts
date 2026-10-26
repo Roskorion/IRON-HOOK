@@ -158,7 +158,7 @@ test("библиотека исключает мягкие приманки и �
   ).toHaveCount(0);
 });
 
-test("поставляемая библиотека содержит реальные варианты Onlyspin до 5 г", async ({
+test("поставляемая библиотека содержит варианты обоих магазинов до 5 г", async ({
   page,
   request,
 }) => {
@@ -167,14 +167,24 @@ test("поставляемая библиотека содержит реаль�
   const entries = await response.json();
   expect(entries.length).toBeGreaterThan(20);
   expect(
+    entries.filter((e: { source: string }) => e.source === "Onlyspin").length,
+  ).toBeGreaterThan(20);
+  expect(
+    entries.filter((e: { source: string }) => e.source === "Japsnasti").length,
+  ).toBeGreaterThan(100);
+  expect(
     new Set(entries.map((e: { lure: { id: string } }) => e.lure.id)).size,
   ).toBe(entries.length);
   for (const entry of entries) {
     expect(["Блесна", "Воблер", "Цикада"]).toContain(entry.lure.type);
     expect(entry.lure.weight).toBeGreaterThan(0);
     expect(entry.lure.weight).toBeLessThanOrEqual(5);
-    expect(entry.source).toBe("Onlyspin");
-    expect(entry.url).toMatch(/^https:\/\/onlyspin\.ru\/catalog\/product\//);
+    expect(["Onlyspin", "Japsnasti"]).toContain(entry.source);
+    expect(entry.url).toMatch(
+      entry.source === "Onlyspin"
+        ? /^https:\/\/onlyspin\.ru\/catalog\/product\//
+        : /^https:\/\/www\.jpsnasti\.ru\/primanki\//,
+    );
     expect(entry.lure.maker).not.toBe("");
     expect(entry.lure.model).not.toBe("");
     expect(entry.lure.code).not.toBe("");
@@ -208,15 +218,75 @@ test("поставляемая библиотека содержит реаль�
   ).toBeTruthy();
 });
 
-test('источник Japsnasti использует правильный домен jpsnasti.ru',async({page})=>{
-  const entry={...fixture[0],source:'Japsnasti',url:'https://www.jpsnasti.ru/test-fixture'};
-  await page.route('**/lure-library.json',r=>r.fulfill({json:[entry]}));
-  await page.goto('/');
-  await page.getByRole('button',{name:'Приманки',exact:true}).click();
-  await page.getByRole('button',{name:'Встроенная библиотека',exact:true}).click();
-  await expect(page.getByRole('link',{name:'Карточка на Japsnasti'})).toHaveAttribute('href',entry.url);
-  await page.getByRole('button',{name:'Мой каталог',exact:true}).click();
-  await page.route('**/lure-library.json',r=>r.fulfill({json:[{...entry,url:'https://www.japsnasti.ru/test-fixture'}]}));
-  await page.getByRole('button',{name:'Встроенная библиотека',exact:true}).click();
-  await expect(page.getByRole('alert')).toContainText('Не удалось загрузить библиотеку');
+test("источник Japsnasti использует правильный домен jpsnasti.ru", async ({
+  page,
+}) => {
+  const entry = {
+    ...fixture[0],
+    source: "Japsnasti",
+    url: "https://www.jpsnasti.ru/test-fixture",
+  };
+  await page.route("**/lure-library.json", (r) => r.fulfill({ json: [entry] }));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Приманки", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Встроенная библиотека", exact: true })
+    .click();
+  await expect(
+    page.getByRole("link", { name: "Карточка на Japsnasti" }),
+  ).toHaveAttribute("href", entry.url);
+  await page.getByRole("button", { name: "Мой каталог", exact: true }).click();
+  await page.route("**/lure-library.json", (r) =>
+    r.fulfill({
+      json: [{ ...entry, url: "https://www.japsnasti.ru/test-fixture" }],
+    }),
+  );
+  await page
+    .getByRole("button", { name: "Встроенная библиотека", exact: true })
+    .click();
+  await expect(page.getByRole("alert")).toContainText(
+    "Не удалось загрузить библиотеку",
+  );
+});
+
+test("библиотека показывает по 24 варианта, поиск сбрасывает номер страницы", async ({
+  page,
+}) => {
+  const entries = Array.from({ length: 26 }, (_, i) => ({
+    ...fixture[0],
+    lure: { ...fixture[0].lure, id: `page-${i}`, model: `Модель ${i + 1}` },
+  }));
+  await page.route("**/lure-library.json", (r) => r.fulfill({ json: entries }));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Приманки", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Встроенная библиотека", exact: true })
+    .click();
+  const library = page.getByRole("region", {
+    name: "Встроенная библиотека приманок",
+  });
+  await expect(library.locator("article")).toHaveCount(24);
+  await expect(
+    page.getByRole("button", { name: "Предыдущая страница", exact: false }),
+  ).toBeDisabled();
+  await page
+    .getByRole("button", { name: "Следующая страница", exact: false })
+    .click();
+  await expect(library.locator("article")).toHaveCount(2);
+  await expect(
+    page.getByRole("heading", { name: "Модель 25", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Следующая страница", exact: false }),
+  ).toBeDisabled();
+  await page.getByLabel("Поиск в библиотеке").fill("Модель 1");
+  await expect(
+    page.getByRole("heading", { name: "Модель 1", exact: true }),
+  ).toBeVisible();
+  await expect(library.locator("article")).toHaveCount(11);
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= innerWidth,
+    ),
+  ).toBeTruthy();
 });

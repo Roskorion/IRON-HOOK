@@ -1,0 +1,49 @@
+{
+  "checkedAt": "2026-10-26",
+  "accepted": 1254,
+  "series": [
+    {
+      "url": "https://www.jpsnasti.ru/primanki/kolebluchiesya_blesny/kolebluchiesya_blesny_nories_masukurouto_sofia",
+      "variantRows": 108
+    },
+    {
+      "url": "https://www.jpsnasti.ru/primanki/kolebluchiesya_blesny/kolebluchiesya_blesny_valkein_hi_burst",
+      "variantRows": 734
+    },
+    {
+      "url": "https://www.jpsnasti.ru/primanki/kolebluchiesya_blesny/kolebluchiesya_blesny_yarie__712_dexter",
+      "variantRows": 124
+    },
+    {
+      "url": "https://www.jpsnasti.ru/primanki/kolebluchiesya_blesny/kolebluchiesya_blesny_velvet_arts_forte",
+      "variantRows": 85
+    },
+    {
+      "url": "https://www.jpsnasti.ru/primanki/voblery/voblery_valkein_haze_nano_ss",
+      "variantRows": 22
+    },
+    {
+      "url": "https://www.jpsnasti.ru/primanki/voblery/voblery_valkein_juju",
+      "variantRows": 32
+    },
+    {
+      "url": "https://www.jpsnasti.ru/primanki/voblery/voblery_nories_pelican_minnow_50f",
+      "variantRows": 7
+    },
+    {
+      "url": "https://www.jpsnasti.ru/primanki/cikady/cikady_naburaya_2win",
+      "variantRows": 11
+    },
+    {
+      "url": "https://www.jpsnasti.ru/primanki/cikady/cikady_valkein_valcyanom",
+      "variantRows": 88
+    },
+    {
+      "url": "https://www.jpsnasti.ru/primanki/cikady/cikady_rodio_craft_shadow_attacker",
+      "variantRows": 43
+    }
+  ],
+  "skipped": [],
+  "errors": [],
+  "scope": "Selected hard-lure series only, not the entire shop. Each record has explicit grams and color in its variant title; exact variant URL is retained. Weight >5g excluded; soft-lure categories not visited."
+}

@@ -88,6 +88,12 @@ for e in entries:
 entries=sorted(unique.values(),key=lambda e:(e['lure']['maker'],e['lure']['model'],e['lure']['weight'],e['lure']['code']))
 report={'checkedAt':CHECKED,'catalogPages':[BASE+p for p in PAGES], 'candidates':len(links),'accepted':len(entries),'skipped':skipped,'errors':errors,
         'scope':'Starter selection from six catalogue pages; not the entire store. Soft lures excluded before visiting product pages; only exact product weights 0 < weight <= 5 included. Color field preserves store color/code without inferred color names.'}
-(ROOT/'public/lure-library.json').write_text(json.dumps(entries,ensure_ascii=False,indent=2)+'\n')
 (ROOT/'scripts/onlyspin-report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')
+if report['errors']:
+    raise SystemExit('Some cards failed: report saved; library left unchanged.')
+existing=json.loads((ROOT/'public/lure-library.json').read_text())
+combined=[e for e in existing if e['source']!='Onlyspin']+entries
+combined.sort(key=lambda e:(e['lure']['maker'].casefold(),e['lure']['model'].casefold(),e['lure']['weight'],e['lure']['code'],e['source']))
+(ROOT/'public/lure-library.json').write_text(json.dumps(combined,ensure_ascii=False,indent=2)+'\n')
+
 print('DONE',len(entries),'accepted,',len(skipped),'skipped,',len(errors),'errors',flush=True)

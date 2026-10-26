@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Lure } from "./types";
 import { parseBackup } from "./backup";
 
@@ -60,6 +60,8 @@ export default function LureLibrary({
   const [type, setType] = useState("");
   const [source, setSource] = useState("");
   const [weight, setWeight] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const top = useRef<HTMLElement>(null);
   useEffect(() => {
     const controller = new AbortController();
     fetch(`${import.meta.env.BASE_URL}lure-library.json`, {
@@ -88,6 +90,13 @@ export default function LureLibrary({
         .toLowerCase()
         .includes(query.trim().toLowerCase()),
   );
+  const pageSize = 24;
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const pageNumber = Math.min(currentPage, pageCount);
+  function goToPage(number: number) {
+    setCurrentPage(number);
+    top.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
   const isOwned = (l: Lure) =>
     owned.some(
       (o) =>
@@ -99,7 +108,7 @@ export default function LureLibrary({
         o.code.toLowerCase() === l.code.toLowerCase(),
     );
   return (
-    <section aria-label="Встроенная библиотека приманок">
+    <section ref={top} aria-label="Встроенная библиотека приманок">
       <p>
         Выберите модель и расцветку, проверьте характеристики и сохраните в
         своём каталоге. Библиотека не влияет на дневник, пока вы не добавите
@@ -115,13 +124,22 @@ export default function LureLibrary({
           Поиск в библиотеке
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setCurrentPage(1);
+            }}
             placeholder="Модель, цвет, код или вес"
           />
         </label>
         <label>
           Производитель
-          <select value={maker} onChange={(e) => setMaker(e.target.value)}>
+          <select
+            value={maker}
+            onChange={(e) => {
+              setMaker(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
             <option value="">Все производители</option>
             {[...new Set(entries.map((e) => e.lure.maker))].sort().map((v) => (
               <option key={v}>{v}</option>
@@ -130,7 +148,13 @@ export default function LureLibrary({
         </label>
         <label>
           Тип приманки
-          <select value={type} onChange={(e) => setType(e.target.value)}>
+          <select
+            value={type}
+            onChange={(e) => {
+              setType(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
             <option value="">Все типы</option>
             {[...new Set(entries.map((e) => e.lure.type))].sort().map((v) => (
               <option key={v}>{v}</option>
@@ -139,7 +163,13 @@ export default function LureLibrary({
         </label>
         <label>
           Вес, г
-          <select value={weight} onChange={(e) => setWeight(e.target.value)}>
+          <select
+            value={weight}
+            onChange={(e) => {
+              setWeight(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
             <option value="">Все веса до 5 г</option>
             {[...new Set(entries.map((e) => e.lure.weight))]
               .sort((a, b) => a - b)
@@ -152,7 +182,13 @@ export default function LureLibrary({
         </label>
         <label>
           Источник
-          <select value={source} onChange={(e) => setSource(e.target.value)}>
+          <select
+            value={source}
+            onChange={(e) => {
+              setSource(e.target.value);
+              setCurrentPage(1);
+            }}
+          >
             <option value="">Все источники</option>
             <option>Onlyspin</option>
             <option>Japsnasti</option>
@@ -176,35 +212,60 @@ export default function LureLibrary({
         <p>Найдено вариантов: {filtered.length}</p>
       )}
       <div className="cards">
-        {filtered.map(({ lure: l, source, url, checkedAt }) => (
-          <article className="panel" key={l.id}>
-            <span className="eyebrow">{l.maker}</span>
-            <h2>{l.model}</h2>
-            <p>
-              {l.type} · {l.weight} г
-            </p>
-            <p>
-              Цвет: {l.color} · Код: {l.code || "Не указан"}
-            </p>
-            <a
-              className="source-link"
-              href={url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Карточка на {source} ↗
-            </a>
-            <p className="footnote">Проверено: {checkedAt}</p>
-            <button
-              className="primary"
-              disabled={isOwned(l)}
-              onClick={() => onChoose(l)}
-            >
-              {isOwned(l) ? "Уже в моём каталоге" : "Добавить в мой каталог"}
-            </button>
-          </article>
-        ))}
+        {filtered
+          .slice((pageNumber - 1) * pageSize, pageNumber * pageSize)
+          .map(({ lure: l, source, url, checkedAt }) => (
+            <article className="panel" key={l.id}>
+              <span className="eyebrow">{l.maker}</span>
+              <h2>{l.model}</h2>
+              <p>
+                {l.type} · {l.weight} г
+              </p>
+              <p>
+                Цвет: {l.color} · Код: {l.code || "Не указан"}
+              </p>
+              <a
+                className="source-link"
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Карточка на {source} ↗
+              </a>
+              <p className="footnote">Проверено: {checkedAt}</p>
+              <button
+                className="primary"
+                disabled={isOwned(l)}
+                onClick={() => onChoose(l)}
+              >
+                {isOwned(l) ? "Уже в моём каталоге" : "Добавить в мой каталог"}
+              </button>
+            </article>
+          ))}
       </div>
+      {filtered.length > pageSize && (
+        <div
+          className="library-pagination"
+          role="group"
+          aria-label="Страницы библиотеки"
+        >
+          <button
+            disabled={pageNumber === 1}
+            onClick={() => goToPage(pageNumber - 1)}
+          >
+            ← Предыдущая страница
+          </button>
+          <span aria-live="polite">
+            Страница {pageNumber} из {pageCount}
+          </span>
+          <button
+            disabled={pageNumber === pageCount}
+            onClick={() => goToPage(pageNumber + 1)}
+          >
+            Следующая страница →
+          </button>
+        </div>
+      )}
       {status === "ready" && entries.length > 0 && !filtered.length && (
         <p className="empty">Ничего не найдено. Измените поиск или фильтры.</p>
       )}
