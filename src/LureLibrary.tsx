@@ -20,7 +20,7 @@ function parseEntries(raw: unknown): Entry[] {
     const hosts =
       source === "Onlyspin"
         ? ["onlyspin.ru", "www.onlyspin.ru"]
-        : ["japsnasti.ru", "www.japsnasti.ru"];
+        : ["jpsnasti.ru", "www.jpsnasti.ru"];
     if (
       link.protocol !== "https:" ||
       !hosts.includes(link.hostname) ||

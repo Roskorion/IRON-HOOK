@@ -207,3 +207,16 @@ test("поставляемая библиотека содержит реаль�
     ),
   ).toBeTruthy();
 });
+
+test('источник Japsnasti использует правильный домен jpsnasti.ru',async({page})=>{
+  const entry={...fixture[0],source:'Japsnasti',url:'https://www.jpsnasti.ru/test-fixture'};
+  await page.route('**/lure-library.json',r=>r.fulfill({json:[entry]}));
+  await page.goto('/');
+  await page.getByRole('button',{name:'Приманки',exact:true}).click();
+  await page.getByRole('button',{name:'Встроенная библиотека',exact:true}).click();
+  await expect(page.getByRole('link',{name:'Карточка на Japsnasti'})).toHaveAttribute('href',entry.url);
+  await page.getByRole('button',{name:'Мой каталог',exact:true}).click();
+  await page.route('**/lure-library.json',r=>r.fulfill({json:[{...entry,url:'https://www.japsnasti.ru/test-fixture'}]}));
+  await page.getByRole('button',{name:'Встроенная библиотека',exact:true}).click();
+  await expect(page.getByRole('alert')).toContainText('Не удалось загрузить библиотеку');
+});
