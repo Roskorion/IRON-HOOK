@@ -60,3 +60,27 @@ export function matchesLure(
     .filter(Boolean)
     .every((token) => text.includes(token));
 }
+
+export function sameLureVariant(
+  a: {
+    maker: string;
+    model: string;
+    weight: number;
+    color: string;
+    code: string;
+  },
+  b: {
+    maker: string;
+    model: string;
+    weight: number;
+    color: string;
+    code: string;
+  },
+): boolean {
+  return (
+    a.weight === b.weight &&
+    (["maker", "model", "color", "code"] as const).every(
+      (k) => a[k].trim().toLowerCase() === b[k].trim().toLowerCase(),
+    )
+  );
+}

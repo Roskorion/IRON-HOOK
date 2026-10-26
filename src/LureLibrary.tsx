@@ -6,6 +6,7 @@ import {
   CATEGORY_LABELS,
   SOURCE_HOSTS,
   matchesLure,
+  sameLureVariant,
   type LibrarySource,
 } from "./lures";
 import { parseBackup } from "./backup";
@@ -54,16 +55,18 @@ function parseEntries(raw: unknown): Entry[] {
 }
 export default function LureLibrary({
   owned,
-  onChoose,
+  onAdd,
+  onViewCatalog,
   onUpdatePhoto,
 }: {
   owned: Lure[];
-  onChoose: (l: Lure) => void;
+  onAdd: (l: Lure) => boolean;
+  onViewCatalog: () => void;
   onUpdatePhoto: (id: string, photo: string) => boolean;
 }) {
   const [entries, setEntries] = useState<Entry[]>([]);
   const [status, setStatus] = useState("loading");
-  const [photoNotice, setPhotoNotice] = useState("");
+  const [actionNotice, setActionNotice] = useState("");
   const [query, setQuery] = useState("");
   const [maker, setMaker] = useState("");
   const [type, setType] = useState("");
@@ -105,25 +108,20 @@ export default function LureLibrary({
     top.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
   const findOwned = (l: Lure) =>
-    owned.find(
-      (o) =>
-        !o.demo &&
-        o.maker.toLowerCase() === l.maker.toLowerCase() &&
-        o.model.toLowerCase() === l.model.toLowerCase() &&
-        o.weight === l.weight &&
-        o.color.toLowerCase() === l.color.toLowerCase() &&
-        o.code.toLowerCase() === l.code.toLowerCase(),
-    );
+    owned.find((o) => !o.demo && sameLureVariant(o, l));
   const isOwned = (l: Lure) => Boolean(findOwned(l));
   const canFillPhoto = (l: Lure) =>
     Boolean(l.photo && findOwned(l) && !findOwned(l)?.photo);
   return (
     <section ref={top} aria-label="Встроенная библиотека приманок">
       <p>
-        Выберите модель и расцветку, проверьте характеристики и сохраните в
-        своём каталоге. Библиотека не влияет на дневник, пока вы не добавите
-        приманку.
+        Нажмите «＋ В МОЙ КАТАЛОГ» у нужной расцветки — приманка сохранится
+        сразу вместе с характеристиками и фото. После добавления её можно
+        изменить в своём каталоге.
       </p>
+      <button className="catalog-shortcut" onClick={onViewCatalog}>
+        Открыть МОЙ КАТАЛОГ ({owned.length}) →
+      </button>
       <div className="notice">
         Только твёрдые приманки до 5 г включительно. Это стартовая подборка, а
         не полный ассортимент магазинов. Если магазин указывает только код
@@ -254,7 +252,7 @@ export default function LureLibrary({
       {status === "ready" && entries.length > 0 && (
         <p>Найдено вариантов: {filtered.length}</p>
       )}
-      {photoNotice && <p role="status">{photoNotice}</p>}
+      {actionNotice && <p role="status">{actionNotice}</p>}
       <div className="cards">
         {filtered
           .slice((pageNumber - 1) * pageSize, pageNumber * pageSize)
@@ -290,17 +288,20 @@ export default function LureLibrary({
                   const saved = findOwned(l);
                   if (saved && canFillPhoto(l)) {
                     if (onUpdatePhoto(saved.id, l.photo))
-                      setPhotoNotice(
+                      setActionNotice(
                         "Фото добавлено в личный каталог. Остальные данные не изменены.",
                       );
-                  } else onChoose(l);
+                  } else if (onAdd(l))
+                    setActionNotice(
+                      `${l.maker} ${l.model} · ${l.color} добавлена в МОЙ КАТАЛОГ. Данные сохранены.`,
+                    );
                 }}
               >
                 {canFillPhoto(l)
                   ? "Добавить фото в мой каталог"
                   : isOwned(l)
                     ? "Уже в моём каталоге"
-                    : "Добавить в мой каталог"}
+                    : "＋ В МОЙ КАТАЛОГ"}
               </button>
             </article>
           ))}

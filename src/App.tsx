@@ -2,7 +2,12 @@ import { useState } from "react";
 import "./App.css";
 import LureLibrary from "./LureLibrary";
 import LurePhoto from "./LurePhoto";
-import { LURE_TYPES, CATEGORY_LABELS, matchesLure } from "./lures";
+import {
+  LURE_TYPES,
+  CATEGORY_LABELS,
+  matchesLure,
+  sameLureVariant,
+} from "./lures";
 import type { Lure, Gear, Kit, Catch, Trip, Data } from "./types";
 import { parseBackup, MAX_BACKUP_BYTES } from "./backup";
 
@@ -160,7 +165,6 @@ function App() {
   const visibleLures = data.lures.filter(
     (l) => (!myLureType || l.type === myLureType) && matchesLure(l, search),
   );
-  const [lurePreset, setLurePreset] = useState<Lure | undefined>();
   function commit(next: Data, recovering = false) {
     if (storageBroken && !recovering) {
       alert(error);
@@ -180,7 +184,6 @@ function App() {
     }
   }
   function open(kind: typeof modal, id = "") {
-    setLurePreset(undefined);
     setEdit(id);
     setModal(kind);
   }
@@ -195,7 +198,8 @@ function App() {
     data.gear.find((g) => g.id === id)?.name || "Не выбрано";
   const ranking = data.lures
     .map((l) => ({
-      label: `${l.maker} ${l.model}`,
+      id: l.id,
+      label: `${l.maker} ${l.model} · ${l.weight} г · ${l.color}`,
       value: all
         .filter((c) => c.lure === l.id)
         .reduce((s, c) => s + c.count, 0),
@@ -532,9 +536,22 @@ function App() {
                     ),
                   })
                 }
-                onChoose={(l) => {
-                  open("lure");
-                  setLurePreset({ ...l, id: "", demo: false });
+                onViewCatalog={() => {
+                  setLibraryOpen(false);
+                  setMyLureType("");
+                  setSearch("");
+                }}
+                onAdd={(l) => {
+                  if (
+                    data.lures.some(
+                      (owned) => !owned.demo && sameLureVariant(owned, l),
+                    )
+                  )
+                    return false;
+                  return commit({
+                    ...data,
+                    lures: [...data.lures, { ...l, id: uid(), demo: false }],
+                  });
                 }}
               />
             ) : (
@@ -823,16 +840,10 @@ function App() {
           kind={modal}
           id={edit}
           data={data}
-          preset={lurePreset}
           close={() => setModal(null)}
           save={(next) => {
             if (commit(next)) {
               setModal(null);
-              if (lurePreset) {
-                setLibraryOpen(false);
-                setMyLureType("");
-                setSearch("");
-              }
             }
           }}
         />
@@ -847,12 +858,16 @@ function Empty() {
     </p>
   );
 }
-function Bars({ items }: { items: { label: string; value: number }[] }) {
+function Bars({
+  items,
+}: {
+  items: { id?: string; label: string; value: number }[];
+}) {
   const max = Math.max(1, ...items.map((i) => i.value));
   return items.length ? (
     <div className="bars">
       {items.map((i) => (
-        <div key={i.label}>
+        <div key={i.id ?? i.label}>
           <div className="bar-label">
             <span>{i.label}</span>
             <b>{i.value}</b>
@@ -868,14 +883,12 @@ function Bars({ items }: { items: { label: string; value: number }[] }) {
   );
 }
 function Editor({
-  preset,
   kind,
   id,
   data,
   close,
   save,
 }: {
-  preset?: Lure;
   kind: "lure" | "gear" | "kit" | "trip";
   id: string;
   data: Data;
@@ -884,7 +897,7 @@ function Editor({
 }) {
   const existing =
     kind === "lure"
-      ? (data.lures.find((x) => x.id === id) ?? preset)
+      ? data.lures.find((x) => x.id === id)
       : kind === "gear"
         ? data.gear.find((x) => x.id === id)
         : kind === "kit"

@@ -63,16 +63,12 @@ test("библиотека: поиск, фильтры, перенос, защи
     .getByRole("combobox", { name: "Источник", exact: true })
     .selectOption("Onlyspin");
   await page.getByLabel("Поиск в библиотеке").fill("TEST");
-  await page.getByRole("button", { name: "Добавить в мой каталог" }).click();
-  await expect(
-    page.getByRole("dialog").getByLabel("Производитель", { exact: true }),
-  ).toHaveValue("Тестовый производитель");
-  await expect(page.getByRole("dialog").getByLabel("Вес, г")).toHaveValue(
-    "1.8",
+  await page.getByRole("button", { name: "＋ В МОЙ КАТАЛОГ" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(page.getByRole("status")).toContainText(
+    "добавлена в МОЙ КАТАЛОГ",
   );
-  await page.getByRole("button", { name: "Отмена", exact: true }).click();
-  await page.getByRole("button", { name: "Добавить в мой каталог" }).click();
-  await page.getByRole("button", { name: "Сохранить", exact: true }).click();
+  await page.getByRole("button", { name: /Открыть МОЙ КАТАЛОГ/ }).click();
   await expect(
     page.getByRole("heading", { name: "Тестовая модель" }),
   ).toBeVisible();
@@ -229,11 +225,8 @@ test("поставляемая библиотека содержит четыр�
     .locator('section[aria-label="Встроенная библиотека приманок"] article')
     .first();
   await expect(first).toContainText(entries[0].lure.model);
-  await first.getByRole("button", { name: "Добавить в мой каталог" }).click();
-  await expect(
-    page.getByRole("dialog").getByLabel("Модель", { exact: true }),
-  ).toHaveValue(entries[0].lure.model);
-  await page.getByRole("button", { name: "Сохранить", exact: true }).click();
+  await first.getByRole("button", { name: "＋ В МОЙ КАТАЛОГ" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
   await page.reload();
   await page.getByRole("button", { name: "Приманки", exact: true }).click();
   await expect(
@@ -373,13 +366,15 @@ test("шесть категорий, фото из магазина и восс�
   await expect
     .poll(() => image.evaluate((img) => (img as HTMLImageElement).naturalWidth))
     .toBeGreaterThan(0);
-  await page.getByRole("button", { name: "Добавить в мой каталог" }).click();
-  await expect(
-    page
-      .getByRole("dialog")
-      .getByRole("combobox", { name: "Тип", exact: true }),
-  ).toHaveValue("Кренк");
-  await page.getByRole("button", { name: "Сохранить", exact: true }).click();
+  await page.getByRole("button", { name: "＋ В МОЙ КАТАЛОГ" }).click();
+  expect(
+    await page.evaluate(
+      () =>
+        JSON.parse(localStorage.getItem("iron-hook-v1")!).lures.find(
+          (l: { model: string }) => l.model === "Вариант Кренк",
+        ).type,
+    ),
+  ).toBe("Кренк");
   const download = page.waitForEvent("download");
   await page
     .getByRole("button", { name: "↓ Резервная копия", exact: true })
@@ -488,8 +483,8 @@ test("1089 60FS присутствует с фото Onlyspin и находит�
       card.locator("img").evaluate((i) => (i as HTMLImageElement).naturalWidth),
     )
     .toBeGreaterThan(0);
-  await card.getByRole("button", { name: "Добавить в мой каталог" }).click();
-  await page.getByRole("button", { name: "Сохранить", exact: true }).click();
+  await card.getByRole("button", { name: "＋ В МОЙ КАТАЛОГ" }).click();
+  await page.getByRole("button", { name: /Открыть МОЙ КАТАЛОГ/ }).click();
   await page
     .getByPlaceholder("Поиск по модели, производителю или цвету…")
     .fill("1089 60fs");
@@ -506,8 +501,8 @@ test("фото ранее сохранённой приманки добавля
   await page
     .getByRole("button", { name: "Встроенная библиотека", exact: true })
     .click();
-  await page.getByRole("button", { name: "Добавить в мой каталог" }).click();
-  await page.getByRole("button", { name: "Сохранить", exact: true }).click();
+  await page.getByRole("button", { name: "＋ В МОЙ КАТАЛОГ" }).click();
+  await page.getByRole("button", { name: /Открыть МОЙ КАТАЛОГ/ }).click();
   const before = await page.evaluate(
     () => JSON.parse(localStorage.getItem("iron-hook-v1")!).lures,
   );
@@ -573,4 +568,97 @@ test("фото ранее сохранённой приманки добавля
         ).photo,
     ),
   ).toBe(entry.lure.photo);
+});
+
+test("разные расцветки добавляются одним нажатием и остаются после обновления", async ({
+  page,
+}) => {
+  const consoleErrors: string[] = [];
+  page.on("console", (message) => {
+    if (message.type() === "error") consoleErrors.push(message.text());
+  });
+  const entries = [
+    fixture[0],
+    {
+      ...fixture[0],
+      lure: {
+        ...fixture[0].lure,
+        id: "other-color",
+        color: "Другой цвет",
+        code: "OTHER",
+      },
+    },
+  ];
+  await page.route("**/lure-library.json", (r) => r.fulfill({ json: entries }));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Приманки", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Встроенная библиотека", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "＋ В МОЙ КАТАЛОГ", exact: true })
+    .first()
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Уже в моём каталоге", exact: true }),
+  ).toBeDisabled();
+  await page
+    .getByRole("button", { name: "＋ В МОЙ КАТАЛОГ", exact: true })
+    .click();
+  await expect(
+    page.getByRole("button", { name: "Уже в моём каталоге", exact: true }),
+  ).toHaveCount(2);
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.getByRole("button", { name: /Открыть МОЙ КАТАЛОГ/ }).click();
+  await expect(
+    page.getByRole("heading", { name: "Тестовая модель", exact: true }),
+  ).toHaveCount(2);
+  await page.reload();
+  await page.getByRole("button", { name: "Приманки", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Тестовая модель", exact: true }),
+  ).toHaveCount(2);
+  const saved = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem("iron-hook-v1")!).lures.filter(
+      (l: { model: string }) => l.model === "Тестовая модель",
+    ),
+  );
+  expect(new Set(saved.map((l: Lure) => l.id)).size).toBe(2);
+  expect(saved.map((l: Lure) => l.code).sort()).toEqual(["OTHER", "TEST"]);
+  expect(consoleErrors.filter((text) => text.includes("same key"))).toEqual([]);
+});
+
+test("ошибка сохранения не показывает ложное добавление в каталог", async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    const original = Storage.prototype.setItem;
+    Storage.prototype.setItem = function (k, v) {
+      if (k === "iron-hook-v1")
+        throw new DOMException("Storage full", "QuotaExceededError");
+      return original.call(this, k, v);
+    };
+  });
+  await page.route("**/lure-library.json", (r) => r.fulfill({ json: fixture }));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Приманки", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Встроенная библиотека", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "＋ В МОЙ КАТАЛОГ", exact: true })
+    .click();
+  await expect(
+    page.getByText("Не удалось сохранить данные:", { exact: false }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "＋ В МОЙ КАТАЛОГ", exact: true }),
+  ).toBeEnabled();
+  await expect(
+    page.getByRole("button", { name: "Уже в моём каталоге", exact: true }),
+  ).toHaveCount(0);
+  await expect(page.getByRole("status")).toHaveCount(0);
+  expect(
+    await page.evaluate(() => localStorage.getItem("iron-hook-v1")),
+  ).toBeNull();
 });
