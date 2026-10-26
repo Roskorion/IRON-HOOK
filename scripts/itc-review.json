@@ -1,0 +1,327 @@
+{
+  "checkedAt": "2026-10-26",
+  "notes": "Corrections checked against original protocol images; individual event 18 spellings checked against its published archive cards. E-like OCR digits are 3 in the reviewed image cells. No arithmetic inference is used to fix unknown cells. SHA-256 locks corrections to these exact images. Independent column-only OCR confirmed catch columns; event 18 row 70 is 17 catches (full-row OCR lost the leading 1).",
+  "events": {
+    "20": {
+      "protocolSha256": "eb19e6852f5558e76658cfb9ef5a46aa52777ed5bfdb3526e79a748e220cd0ab",
+      "expectedRows": 30,
+      "numericCorrections": {},
+      "nameCorrections": {},
+      "extraRows": [],
+      "teamNames": [
+        "OVER ONE",
+        "АРМАДА",
+        "МАКСФИШИНГ - ITC I",
+        "NORIES TEAM",
+        "BAIT-A",
+        "BRIGHT TROUT",
+        "МАКСФИШИНГ - ITC II",
+        "Х.В.А.Н.К.",
+        "РЕАЛИСТЫ I",
+        "TROUT MAFIA",
+        "ПИП",
+        "СТРИМ",
+        "TROUT KING II",
+        "Х/К",
+        "ПАЛАТА №6",
+        "ТРИАДА",
+        "РЕАЛИСТЫ II",
+        "NEO STYLE TEAM I",
+        "BELARUS BROTHERS",
+        "ULTIMA ITC",
+        "AREA SHOP СЕВЕР",
+        "ЯКОРЕК I",
+        "ПАПА МОЖЕТ",
+        "TRIUMPH JR S (SIERRA)",
+        "РЕАЛИСТЫ III",
+        "HARD ANGLERS BELARUS",
+        "SALMO DUO",
+        "SKY TROUT",
+        "FULL TANK",
+        "FOX TROUT TEAM II"
+      ],
+      "publishedCatchTotal": 1982
+    },
+    "18": {
+      "protocolSha256": "1edb57e0b1a99359250afe779607d264535c95f145e777877cb9ae74f4341f03",
+      "expectedRows": 80,
+      "numericCorrections": {
+        "76": {
+          "points": 17
+        },
+        "70": {
+          "catches": 17
+        }
+      },
+      "nameCorrections": {
+        "4": "Чачин Виталий",
+        "44": "Ваньков Александр",
+        "56": "Ушаков Дмитрий"
+      },
+      "extraRows": []
+    },
+    "14": {
+      "protocolSha256": "53f4e66430bc233baf1cc3bf0db460678eef3ca762ad6836c16684dfc780f146",
+      "expectedRows": 60,
+      "numericCorrections": {
+        "1": {
+          "drawFish": 3
+        },
+        "2": {
+          "lossFish": 3
+        },
+        "3": {
+          "wins": 11
+        }
+      },
+      "nameCorrections": {},
+      "extraRows": [],
+      "publishedCatchTotal": 1858
+    },
+    "13": {
+      "protocolSha256": "7461294968ea027e25e48b526868f8f0a8edb186f4b753c7f4c838dc16d8c569",
+      "expectedRows": 80,
+      "numericCorrections": {
+        "8": {
+          "lossFish": 3
+        },
+        "16": {
+          "lossFish": 3
+        },
+        "21": {
+          "lossFish": 3
+        },
+        "23": {
+          "lossFish": 3
+        },
+        "24": {
+          "lossFish": 3
+        },
+        "25": {
+          "lossFish": 3
+        },
+        "26": {
+          "lossFish": 3
+        },
+        "28": {
+          "lossFish": 3
+        },
+        "29": {
+          "lossFish": 3
+        },
+        "30": {
+          "lossFish": 3
+        },
+        "31": {
+          "lossFish": 3
+        },
+        "33": {
+          "lossFish": 3
+        },
+        "35": {
+          "lossFish": 3
+        },
+        "38": {
+          "wins": 3
+        },
+        "39": {
+          "wins": 3
+        },
+        "40": {
+          "wins": 3
+        },
+        "45": {
+          "wins": 3
+        },
+        "46": {
+          "wins": 3,
+          "lossFish": 3
+        },
+        "47": {
+          "wins": 3
+        },
+        "49": {
+          "lossFish": 3
+        },
+        "50": {
+          "lossFish": 3
+        },
+        "51": {
+          "wins": 3
+        },
+        "52": {
+          "wins": 3
+        },
+        "54": {
+          "wins": 3
+        },
+        "56": {
+          "wins": 3
+        },
+        "57": {
+          "wins": 3
+        },
+        "58": {
+          "wins": 3
+        },
+        "59": {
+          "wins": 3
+        },
+        "61": {
+          "lossFish": 3
+        },
+        "64": {
+          "wins": 3
+        },
+        "65": {
+          "wins": 3
+        },
+        "67": {
+          "lossFish": 3
+        },
+        "73": {
+          "drawFish": 3
+        },
+        "74": {
+          "drawFish": 3
+        },
+        "78": {
+          "lossZero": 3
+        }
+      },
+      "nameCorrections": {},
+      "extraRows": [
+        {
+          "place": 72,
+          "name": "Коротков Алексей",
+          "games": 9,
+          "wins": 1,
+          "drawZero": 0,
+          "drawFish": 0,
+          "lossFish": 8,
+          "lossZero": 0,
+          "catches": 26,
+          "opponentCatches": 69,
+          "points": 12
+        }
+      ],
+      "publishedCatchTotal": 3956
+    },
+    "12": {
+      "protocolSha256": "7bf9bc84457ce41149e918f5fe75e528da1d945f03dd86e9d15f917b3f403c0a",
+      "expectedRows": 20,
+      "numericCorrections": {},
+      "nameCorrections": {},
+      "extraRows": [],
+      "teamNames": [
+        "ПИП",
+        "РЕАЛИСТЫ II",
+        "BAIT-A",
+        "РЕАЛИСТЫ III",
+        "ULTIMA ITC II",
+        "UNLIMITED",
+        "РСК СПАРТАК МОСКВА",
+        "ULTIMA ITC",
+        "BLACK TROUT",
+        "РЕАЛИСТЫ I",
+        "FOX TROUT TEAM",
+        "ВА-БАНК",
+        "IRON HOOK",
+        "FOX TROUT TEAM II",
+        "TRIUMPH",
+        "Х.В.А.Н.К.",
+        "ПАПА МОЖЕТ",
+        "Х.В.А.Н.К. II",
+        "HARDTACKLE TEAM",
+        "RAPALA"
+      ],
+      "publishedCatchTotal": 2399
+    },
+    "10": {
+      "protocolSha256": "fb2fdf6b343818031a7bc2188d5f7d02ab477d57c0f951732ded91286c4e30fa",
+      "expectedRows": 80,
+      "numericCorrections": {
+        "2": {
+          "lossFish": 3
+        },
+        "18": {
+          "lossFish": 3
+        },
+        "22": {
+          "lossFish": 3
+        },
+        "26": {
+          "lossFish": 3
+        },
+        "30": {
+          "lossFish": 3
+        },
+        "31": {
+          "lossFish": 3
+        },
+        "36": {
+          "lossFish": 3
+        },
+        "40": {
+          "wins": 3,
+          "lossFish": 3
+        },
+        "45": {
+          "wins": 3
+        },
+        "46": {
+          "wins": 3
+        },
+        "47": {
+          "wins": 3
+        },
+        "48": {
+          "wins": 3
+        },
+        "51": {
+          "wins": 3
+        },
+        "52": {
+          "wins": 3
+        },
+        "54": {
+          "wins": 3
+        },
+        "58": {
+          "wins": 3
+        },
+        "60": {
+          "wins": 3
+        },
+        "61": {
+          "wins": 3
+        },
+        "64": {
+          "drawFish": 3
+        },
+        "65": {
+          "wins": 3,
+          "lossFish": 3
+        },
+        "68": {
+          "lossFish": 3
+        },
+        "72": {
+          "lossZero": 3
+        },
+        "78": {
+          "lossZero": 3
+        },
+        "80": {
+          "lossFish": 3
+        },
+        "1": {
+          "wins": 10
+        }
+      },
+      "nameCorrections": {},
+      "extraRows": [],
+      "publishedCatchTotal": 2883
+    }
+  }
+}

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import "./App.css";
+import ItcStats from "./ItcStats";
 import { catchDescription } from "./catches";
 import LureLibrary from "./LureLibrary";
 import LurePhoto from "./LurePhoto";
@@ -134,8 +135,10 @@ const pages = [
   "Снасти и комплекты",
   "Дневник рыбалок",
   "Аналитика",
+  "ITC — командная статистика",
+  "ITC — личная статистика",
 ];
-const icons = ["◈", "◉", "⌁", "▤", "▥"];
+const icons = ["◈", "◉", "⌁", "▤", "▥", "♜", "◉"];
 function App() {
   const [initial] = useState(() => {
     try {
@@ -338,6 +341,8 @@ function App() {
                   "Соберите снасти в готовый к старту комплект.",
                   "Сохраняйте условия, туры и результат каждого выхода.",
                   "Находите закономерности в собственных результатах.",
+                  "Участия, уловы и результаты команд по опубликованным протоколам ITC.",
+                  "Личная статистика спортсменов по архиву турниров ITC.",
                 ][page]
               }
             </p>
@@ -359,45 +364,46 @@ function App() {
           )}
         </div>
         {error && <div className="notice error">{error}</div>}
-        {(data.lures.some((l) => l.demo) ||
-          data.trips.some((t) => t.demo) ||
-          data.gear.some((g) => g.demo) ||
-          data.kits.some((k) => k.demo)) && (
-          <div className="notice">
-            <span>
-              ◈ <b>Демонстрационный режим.</b> Тестовые записи включены в
-              статистику. Добавляйте свои данные или начните с чистой базы.
-            </span>
-            <button
-              onClick={() => {
-                if (
-                  confirm(
-                    "Удалить все данные и начать с пустой базы? Сначала рекомендуем скачать резервную копию.",
-                  )
-                ) {
-                  try {
-                    localStorage.setItem(
-                      key,
-                      JSON.stringify({
-                        lures: [],
-                        gear: [],
-                        kits: [],
-                        trips: [],
-                      }),
-                    );
-                    setData({ lures: [], gear: [], kits: [], trips: [] });
-                    setStorageBroken(false);
-                    setError("");
-                  } catch {
-                    setError("Не удалось очистить хранилище.");
+        {page < 5 &&
+          (data.lures.some((l) => l.demo) ||
+            data.trips.some((t) => t.demo) ||
+            data.gear.some((g) => g.demo) ||
+            data.kits.some((k) => k.demo)) && (
+            <div className="notice">
+              <span>
+                ◈ <b>Демонстрационный режим.</b> Тестовые записи включены в
+                статистику. Добавляйте свои данные или начните с чистой базы.
+              </span>
+              <button
+                onClick={() => {
+                  if (
+                    confirm(
+                      "Удалить все данные и начать с пустой базы? Сначала рекомендуем скачать резервную копию.",
+                    )
+                  ) {
+                    try {
+                      localStorage.setItem(
+                        key,
+                        JSON.stringify({
+                          lures: [],
+                          gear: [],
+                          kits: [],
+                          trips: [],
+                        }),
+                      );
+                      setData({ lures: [], gear: [], kits: [], trips: [] });
+                      setStorageBroken(false);
+                      setError("");
+                    } catch {
+                      setError("Не удалось очистить хранилище.");
+                    }
                   }
-                }
-              }}
-            >
-              Очистить базу
-            </button>
-          </div>
-        )}
+                }}
+              >
+                Очистить базу
+              </button>
+            </div>
+          )}
         {(page === 0 || page === 4) && (
           <>
             <div className="stats">
@@ -772,6 +778,8 @@ function App() {
             </section>
           </>
         )}
+        {page === 5 && <ItcStats key="team" mode="team" />}
+        {page === 6 && <ItcStats key="individual" mode="individual" />}
         {restoreError && (
           <div className="notice error" role="alert">
             {restoreError} Текущие записи не изменены.

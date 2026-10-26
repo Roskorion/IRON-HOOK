@@ -1,0 +1,77 @@
+{
+  "checkedAt": "2026-10-26",
+  "events": [
+    {
+      "id": "20",
+      "protocolUrl": "https://msk-trout.ru/images/troutcalendar-results/archive/58/team/protocol-20261019-122446.png",
+      "protocolSha256": "eb19e6852f5558e76658cfb9ef5a46aa52777ed5bfdb3526e79a748e220cd0ab",
+      "verifiedRows": 30,
+      "realParticipants": 30,
+      "excludedVirtual": 0,
+      "archiveParticipants": 30,
+      "catchTotal": 1982,
+      "opponentCatchTotal": 1982,
+      "numericChecks": "games and points checked on every row; published catch total checked when present"
+    },
+    {
+      "id": "18",
+      "protocolUrl": "https://msk-trout.ru/images/troutcalendar-results/archive/56/individual/itc-area-56-protocol-fe449ef6c8efb2163b0a5ec81ee22660.png",
+      "protocolSha256": "1edb57e0b1a99359250afe779607d264535c95f145e777877cb9ae74f4341f03",
+      "verifiedRows": 80,
+      "realParticipants": 80,
+      "excludedVirtual": 0,
+      "archiveParticipants": 80,
+      "catchTotal": 2555,
+      "opponentCatchTotal": 2555,
+      "numericChecks": "games and points checked on every row; published catch total checked when present"
+    },
+    {
+      "id": "14",
+      "protocolUrl": "https://msk-trout.ru/images/troutcalendar-results/archive/49/individual/protocol-20260927-111828.png",
+      "protocolSha256": "53f4e66430bc233baf1cc3bf0db460678eef3ca762ad6836c16684dfc780f146",
+      "verifiedRows": 60,
+      "realParticipants": 58,
+      "excludedVirtual": 2,
+      "archiveParticipants": 58,
+      "catchTotal": 1858,
+      "opponentCatchTotal": 1858,
+      "numericChecks": "games and points checked on every row; published catch total checked when present"
+    },
+    {
+      "id": "13",
+      "protocolUrl": "https://msk-trout.ru/images/troutcalendar-results/archive/45/individual/protocol-20260919-170044.png",
+      "protocolSha256": "7461294968ea027e25e48b526868f8f0a8edb186f4b753c7f4c838dc16d8c569",
+      "verifiedRows": 80,
+      "realParticipants": 80,
+      "excludedVirtual": 0,
+      "archiveParticipants": 80,
+      "catchTotal": 3956,
+      "opponentCatchTotal": 3964,
+      "numericChecks": "games and points checked on every row; published catch total checked when present"
+    },
+    {
+      "id": "12",
+      "protocolUrl": "https://msk-trout.ru/images/troutcalendar-results/archive/41/team/protocol-20260912-173455.png",
+      "protocolSha256": "7bf9bc84457ce41149e918f5fe75e528da1d945f03dd86e9d15f917b3f403c0a",
+      "verifiedRows": 20,
+      "realParticipants": 20,
+      "excludedVirtual": 0,
+      "archiveParticipants": 20,
+      "catchTotal": 2399,
+      "opponentCatchTotal": 2399,
+      "numericChecks": "games and points checked on every row; published catch total checked when present"
+    },
+    {
+      "id": "10",
+      "protocolUrl": "https://msk-trout.ru/images/troutcalendar-results/archive/43/individual/protocol-20260906-171951.png",
+      "protocolSha256": "fb2fdf6b343818031a7bc2188d5f7d02ab477d57c0f951732ded91286c4e30fa",
+      "verifiedRows": 80,
+      "realParticipants": 80,
+      "excludedVirtual": 0,
+      "archiveParticipants": 77,
+      "catchTotal": 2883,
+      "opponentCatchTotal": 2883,
+      "numericChecks": "games and points checked on every row; published catch total checked when present"
+    }
+  ]
+}

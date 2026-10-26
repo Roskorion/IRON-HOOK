@@ -914,3 +914,63 @@ footer {
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
+.itc-filters {
+  display: grid;
+  grid-template-columns: 1fr 140px 1.5fr;
+  gap: 16px;
+  margin: 24px 0;
+}
+.itc-filters label {
+  font-size: 12px;
+  color: #a9acb8;
+  display: grid;
+  gap: 8px;
+}
+.itc-stats a {
+  color: #fa747c;
+  text-decoration: underline;
+}
+.itc-outcomes {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.itc-outcomes span {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  color: #aaaebb;
+  font-size: 14px;
+}
+.itc-outcomes b {
+  font-size: 26px;
+  color: #eee;
+}
+.itc-summary {
+  margin-bottom: 24px;
+}
+.itc-stats .stat strong {
+  font-size: 32px;
+}
+aside nav button {
+  font-size: 12px;
+}
+@media (max-width: 900px) {
+  .itc-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+  .itc-filters label:last-child {
+    grid-column: 1/-1;
+  }
+}
+@media (max-width: 700px) {
+  .itc-filters {
+    grid-template-columns: 1fr;
+  }
+  .itc-filters label:last-child {
+    grid-column: auto;
+  }
+  .itc-stats .stat strong {
+    font-size: 28px;
+  }
+}
