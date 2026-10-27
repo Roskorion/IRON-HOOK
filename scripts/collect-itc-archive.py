@@ -1,4 +1,4 @@
-"""Read ONLY linked public ITC archives and prepare OCR candidates for review.
+"""Read linked public ITC, WTF and Area Shop archives and prepare OCR candidates for review.
 No organizer live feed, unpublished IDs or authentication endpoints are used.
 Requires beautifulsoup4, Pillow, numpy, tesseract and Russian traineddata.
 Does not publish unreviewed OCR into the app.
@@ -31,12 +31,12 @@ soup=BeautifulSoup(fetch(BASE+'/arkhiv',WORK/'archive.html'),'html.parser')
 events=[]
 for card in soup.select('article.mod-troutresultsarchive__card'):
     props={d.dt.get_text(' ',strip=True):d.dd.get_text(' ',strip=True) for d in card.select('dl > div') if d.dt and d.dd}
-    if props.get('Организатор')!='ITC':continue
+    if props.get('Организатор') not in ['ITC','WTF','Area Shop']:continue
     a=card.select_one('h3 a[href]');url=urllib.parse.urljoin(BASE,html.unescape(a['href']))
     id=urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)['archive'][0]
     mode='team' if 'Командный' in props.get('Формат','') else 'individual'
     events.append({'id':id,'title':a.get_text(' ',strip=True),'date':datetime.datetime.strptime(props['Дата'],'%d.%m.%Y %H:%M').date().isoformat(),
-        'venue':props.get('Место / водоём',''),'mode':mode,'participants':int(props['Команд' if mode=='team' else 'Спортсменов']),'url':url})
+        'organizer':props['Организатор'],'venue':props.get('Место / водоём',''),'mode':mode,'participants':int(props['Команд' if mode=='team' else 'Спортсменов']),'url':url})
 
 def extract(event):
     id=event['id'];s=BeautifulSoup(fetch(event['url'],WORK/f'event-{id}.html'),'html.parser')

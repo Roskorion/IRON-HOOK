@@ -17,7 +17,7 @@ for e in a['events']:
   if not match:continue
   place=int(match[1]);body=match[2]
   if place in reviewed_missing:continue
-  split=list(re.finditer(r'(?<=\d)\s*[-–]\s*(?=\d)',body))
+  split=list(re.finditer(r'(?:(?<=\d)\s*[-–]\s*|\s+[-–]\s+)(?=\S)',body))
   if not split:raise ValueError(f'Unreviewed unparseable row {e["id"]}/{place}')
   at=split[-1];left=body[:at.start()].split();right=body[at.end():].split()
   if len(left)<8 or len(right)<2:raise ValueError('Incomplete protocol row')
@@ -45,8 +45,8 @@ for e in a['events']:
  if len(set(names))!=len(names):raise ValueError('Duplicate participant names require disambiguation')
  if e['publishedNames']:
   published={p['name'] for p in e['publishedNames']}
-  if {r['name'] for r in actual}!=published:raise ValueError('Names do not match the published archive card list')
- events.append({k:e[k] for k in ['id','title','date','venue','mode','url','protocolUrl']}|{'participants':len(actual),'fieldSize':len(rows),'archiveParticipants':e['participants'],'virtualParticipants':len(virtual),'results':actual})
+  if {r['name'] for r in actual} != published - set(patch.get('publishedCardsWithoutResult', [])):raise ValueError(f'Names mismatch {e["id"]}: protocol-only={set(r["name"] for r in actual)-published}; cards-only={published-set(r["name"] for r in actual)}')
+ events.append({k:e[k] for k in ['id','title','date','venue','mode','url','protocolUrl']}|{'organizer':e['organizer'],**({'sourceNote':patch['sourceNote']} if patch.get('sourceNote') else {}),'participants':len(actual),'fieldSize':len(rows),'archiveParticipants':e['participants'],'virtualParticipants':len(virtual),'results':actual})
  reports.append({'id':e['id'],'protocolUrl':e['protocolUrl'],'protocolSha256':e['protocolSha256'],'verifiedRows':len(rows),'realParticipants':len(actual),'excludedVirtual':len(virtual),'archiveParticipants':e['participants'],'catchTotal':sum(r['catches'] for r in rows),'opponentCatchTotal':sum(r['opponentCatches'] for r in rows),'numericChecks':'games and points checked on every row; published catch total checked when present'})
 output={'version':1,'source':a['source'],'checkedAt':a['checkedAt'],'events':events}
 (ROOT/'public/itc-archive.json').write_text(json.dumps(output,ensure_ascii=False,indent=2)+'\n')

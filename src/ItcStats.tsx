@@ -11,6 +11,7 @@ export default function ItcStats({ mode }: { mode: ItcMode }) {
     [error, setError] = useState("");
   const [query, setQuery] = useState(""),
     [year, setYear] = useState(""),
+    [organizer, setOrganizer] = useState(""),
     [selected, setSelected] = useState("");
   useEffect(() => {
     const abort = new AbortController();
@@ -25,7 +26,7 @@ export default function ItcStats({ mode }: { mode: ItcMode }) {
       .catch(() => {
         if (!abort.signal.aborted)
           setError(
-            "Не удалось загрузить статистику ITC. Обновите страницу. Личный дневник не изменён.",
+            "Не удалось загрузить статистику. Обновите страницу. Личный дневник не изменён.",
           );
       });
     return () => abort.abort();
@@ -36,9 +37,11 @@ export default function ItcStats({ mode }: { mode: ItcMode }) {
         {error}
       </div>
     );
-  if (!archive) return <p role="status">Загрузка статистики ITC…</p>;
+  if (!archive) return <p role="status">Загрузка статистики…</p>;
   const allEvents = archive.events.filter((e) => e.mode === mode);
-  const events = allEvents.filter((e) => !year || e.date.startsWith(year));
+  const organizers = [...new Set(archive.events.map((e) => e.organizer))].sort((a, b) => a.localeCompare(b, "ru"));
+  const organizerEvents = allEvents.filter((e) => !organizer || e.organizer === organizer);
+  const events = organizerEvents.filter((e) => !year || e.date.startsWith(year));
   const entities = [
     ...new Map(
       events
@@ -72,7 +75,7 @@ export default function ItcStats({ mode }: { mode: ItcMode }) {
     <section
       className="itc-stats"
       aria-label={
-        mode === "team" ? "Командная статистика ITC" : "Личная статистика ITC"
+        mode === "team" ? "Командная статистика" : "Личная статистика"
       }
     >
       <div className="notice">
@@ -82,12 +85,22 @@ export default function ItcStats({ mode }: { mode: ItcMode }) {
             архив msk-trout.ru ↗
           </a>
           . Снимок данных: {archive.checkedAt}. В этом разделе{" "}
-          {allEvents.length} опубликованных турниров ITC. Новые результаты
+          {allEvents.length} опубликованных турниров в этом формате. Новые результаты
           появляются после обновления набора данных приложения; это не прямая
           трансляция.
         </span>
       </div>
       <div className="itc-filters">
+        <label>
+          Организатор
+          <select value={organizer} onChange={(e) => {
+            setOrganizer(e.target.value);
+            setYear("");
+          }}>
+            <option value="">Все организаторы</option>
+            {organizers.map((name) => <option key={name} value={name}>{name}</option>)}
+          </select>
+        </label>
         <label>
           {mode === "team" ? "Поиск команды" : "Поиск спортсмена"}
           <input
@@ -110,7 +123,7 @@ export default function ItcStats({ mode }: { mode: ItcMode }) {
             }}
           >
             <option value="">Все годы</option>
-            {[...new Set(allEvents.map((e) => e.date.slice(0, 4)))]
+            {[...new Set(organizerEvents.map((e) => e.date.slice(0, 4)))]
               .sort()
               .reverse()
               .map((y) => (
@@ -136,7 +149,9 @@ export default function ItcStats({ mode }: { mode: ItcMode }) {
       </div>
       {!current ? (
         <p className="empty">
-          Участник не найден в выбранных архивах. Измените поиск или год.
+          {!events.length
+            ? `Для выбранных фильтров нет ${mode === "team" ? "командных" : "личных"} турниров в загруженном архиве. Измените организатора или год.`
+            : "Участник не найден в выбранных архивах. Измените поиск, организатора или год."}
         </p>
       ) : (
         <>
@@ -205,7 +220,8 @@ export default function ItcStats({ mode }: { mode: ItcMode }) {
                         <br />
                         <b>{e.title}</b>
                         <br />
-                        <span className="muted">{e.venue}</span>
+                        <span className="muted">{e.organizer} · {e.venue}</span>
+                        {e.sourceNote && <p className="footnote">{e.sourceNote}</p>}
                       </td>
                       <td>
                         {r.place} / {e.fieldSize}
@@ -243,8 +259,9 @@ export default function ItcStats({ mode }: { mode: ItcMode }) {
         </>
       )}
       <p className="footnote">
-        Включены только публикации организатора ITC, доступные на странице
-        архива при проверке. Area Shop и WTF сюда не входят. Турниры разных лиг
+        Включены публикации ITC, WTF и Area Shop, доступные на странице
+        архива при проверке. Если у организатора нет турниров выбранного формата,
+        раздел покажет отсутствие данных. Турниры разных лиг
         показаны с исходными названиями; лучшие и средние места относятся только
         к выбранным событиям. Виртуальные участники ВИ исключены из выбора.
         Место и размер поля сохранены из итогового протокола, даже если карточка

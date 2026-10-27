@@ -1,6 +1,6 @@
 {
-  "checkedAt": "2026-10-26",
-  "notes": "Corrections checked against original protocol images; individual event 18 spellings checked against its published archive cards. E-like OCR digits are 3 in the reviewed image cells. No arithmetic inference is used to fix unknown cells. SHA-256 locks corrections to these exact images. Independent column-only OCR confirmed catch columns; event 18 row 70 is 17 catches (full-row OCR lost the leading 1).",
+  "checkedAt": "2026-10-27",
+  "notes": "Corrections checked against original protocol images; individual event 18 spellings checked against its published archive cards. E-like OCR digits are 3 in the reviewed image cells. No arithmetic inference is used to fix unknown cells. SHA-256 locks corrections to these exact images. Independent column-only OCR confirmed catch columns; event 18 row 70 is 17 catches (full-row OCR lost the leading 1). WTF 19 and Area Shop 16/17/21 reviewed against original images on 2026-10-27; missing OCR places 21/2 and 21/52 transcribed directly. Archive 16 metadata says Oct 3 day I while image header says Oct 4 day II; archive metadata retained without guessing.",
   "events": {
     "20": {
       "protocolSha256": "eb19e6852f5558e76658cfb9ef5a46aa52777ed5bfdb3526e79a748e220cd0ab",
@@ -322,6 +322,122 @@
       "nameCorrections": {},
       "extraRows": [],
       "publishedCatchTotal": 2883
+    },
+    "19": {
+      "protocolSha256": "3926e33cadd8b32f93de71df0b6da8d708be5ad83fe704b7e53711c23d1cda5f",
+      "expectedRows": 22,
+      "numericCorrections": {},
+      "nameCorrections": {
+        "7": "ВИ-1",
+        "19": "Вакула Юрий",
+        "13": "Палеев Дмитрий"
+      },
+      "extraRows": [],
+      "publishedCardsWithoutResult": [
+        "Гулага Александр"
+      ]
+    },
+    "21": {
+      "protocolSha256": "6850ad19383328679c2cc51df8a20645fa47dacb342163e81673c12f3fc7b37d",
+      "expectedRows": 66,
+      "numericCorrections": {
+        "8": {
+          "opponentCatches": 17
+        },
+        "14": {
+          "catches": 17
+        },
+        "36": {
+          "points": 11
+        },
+        "40": {
+          "points": 17
+        },
+        "42": {
+          "points": 17
+        }
+      },
+      "nameCorrections": {
+        "42": "Огнянович Павел",
+        "54": "ВИ-1",
+        "64": "ВИ-2"
+      },
+      "extraRows": [
+        {
+          "name": "Каминер Александр",
+          "place": 2,
+          "games": 8,
+          "wins": 6,
+          "drawZero": 0,
+          "drawFish": 1,
+          "lossFish": 1,
+          "lossZero": 0,
+          "catches": 24,
+          "opponentCatches": 8,
+          "points": 27
+        },
+        {
+          "name": "Калашников Дмитрий",
+          "place": 52,
+          "games": 8,
+          "wins": 2,
+          "drawZero": 0,
+          "drawFish": 1,
+          "lossFish": 4,
+          "lossZero": 1,
+          "catches": 10,
+          "opponentCatches": 17,
+          "points": 14
+        }
+      ],
+      "publishedCardsWithoutResult": [
+        "Балин Кирилл",
+        "Романко Алексей"
+      ]
+    },
+    "17": {
+      "protocolSha256": "58edef42bb0a3043b14f446d7b4f41c64bff7385419a6066a8793c0c03bab030",
+      "expectedRows": 58,
+      "numericCorrections": {
+        "17": {
+          "opponentCatches": 52
+        },
+        "30": {
+          "drawFish": 3,
+          "lossFish": 3
+        },
+        "38": {
+          "drawFish": 3
+        }
+      },
+      "nameCorrections": {
+        "5": "Самойлов Кирилл",
+        "14": "Пак Аркадий",
+        "17": "Савин Дмитрий",
+        "19": "Самойлов Дмитрий",
+        "32": "Шеповалов Аким"
+      },
+      "extraRows": []
+    },
+    "16": {
+      "protocolSha256": "a09cecfa7afd3fd3943e1e3c8582ab5f3c2753c488c64cb51afa7ab8d11e91ef",
+      "expectedRows": 78,
+      "numericCorrections": {
+        "53": {
+          "catches": 52
+        }
+      },
+      "nameCorrections": {
+        "1": "Пак Аркадий",
+        "9": "Павлов Константин",
+        "15": "Догадкин Егор",
+        "36": "ВИ-1"
+      },
+      "extraRows": [],
+      "publishedCardsWithoutResult": [
+        "В И 1"
+      ],
+      "sourceNote": "В карточке архива указаны 03.10.2026 и День I, в заголовке изображения — 04.10.2026 и День II. Дата и название здесь взяты из карточки архива."
     }
   }
 }

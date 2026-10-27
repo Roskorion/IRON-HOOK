@@ -18,6 +18,8 @@ export type ItcEvent = {
   date: string;
   venue: string;
   mode: ItcMode;
+  organizer: string;
+  sourceNote?: string;
   participants: number;
   fieldSize: number;
   archiveParticipants: number;
@@ -65,6 +67,10 @@ export function parseItc(value: unknown): ItcArchive {
       ids.has(e.id) ||
       !["team", "individual"].includes(e.mode) ||
       !e.title ||
+      typeof e.organizer !== "string" ||
+      !e.organizer.trim() ||
+      e.organizer !== e.organizer.trim() ||
+      (e.sourceNote !== undefined && (typeof e.sourceNote !== "string" || e.sourceNote.length > 2000)) ||
       !/^\d{4}-\d{2}-\d{2}$/.test(e.date) ||
       !Number.isInteger(e.participants) ||
       e.participants < 1 ||
