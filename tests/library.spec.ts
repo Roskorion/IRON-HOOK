@@ -476,7 +476,7 @@ test("1089 60FS присутствует с фото Onlyspin и находит�
   await expect(card).toContainText("60FS");
   await expect(card.locator("img")).toHaveAttribute(
     "src",
-    /^https:\/\/onlyspin\.ru\/upload\//,
+    /lure-photos\//,
   );
   await expect
     .poll(() =>
